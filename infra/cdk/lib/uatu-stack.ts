@@ -14,6 +14,7 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 const REPO_ROOT = path.join(__dirname, "../../..");
 const API_ENTRY = path.join(REPO_ROOT, "apps/api/src/lambda-api.ts");
@@ -72,7 +73,8 @@ export class UatuShipItStack extends cdk.Stack {
       eventBusName: "uatu-shipit",
     });
 
-    const sharedEnv = {
+    const webOrigin = process.env.UATU_WEB_ORIGIN?.trim() || "https://uatu-beta.vercel.app";
+    const sharedEnv: Record<string, string> = {
       TASKS_TABLE: tasksTable.tableName,
       ARTIFACT_BUCKET: artifactBucket.bucketName,
       JOB_QUEUE_URL: jobQueue.queueUrl,
@@ -82,14 +84,41 @@ export class UatuShipItStack extends cdk.Stack {
       UATU_DATA_DIR: "/tmp/uatu-data",
       // Default fail-closed for deployed stacks; override explicitly for break-glass demos.
       UATU_AUTH_REQUIRED: process.env.UATU_AUTH_REQUIRED ?? "true",
-      UATU_CORS_ORIGIN: process.env.UATU_WEB_ORIGIN?.trim() || "http://localhost:5173",
+      UATU_CORS_ORIGIN: webOrigin,
       UATU_CORS_CREDENTIALS: "true",
-      UATU_WEB_ORIGIN: process.env.UATU_WEB_ORIGIN?.trim() || "http://localhost:5173",
+      UATU_WEB_ORIGIN: webOrigin,
+      UATU_COOKIE_SECURE: "true",
+      UATU_COOKIE_SAMESITE: "None",
+      UATU_BEDROCK_ENABLED: process.env.UATU_BEDROCK_ENABLED ?? "true",
+      UATU_BEDROCK_REGION: process.env.UATU_BEDROCK_REGION ?? "ap-south-1",
+      UATU_BEDROCK_MODEL_ID: process.env.UATU_BEDROCK_MODEL_ID ?? "apac.amazon.nova-micro-v1:0",
       // git-lambda2 layer installs binaries under /opt/bin
       PATH: "/opt/bin:/usr/local/bin:/usr/bin:/bin",
       GIT_TEMPLATE_DIR: "/opt/share/git-core/templates",
       GIT_EXEC_PATH: "/opt/libexec/git-core",
     };
+
+    if (process.env.UATU_GITHUB_APP_ID) {
+      sharedEnv.UATU_GITHUB_APP_ID = process.env.UATU_GITHUB_APP_ID.trim();
+    }
+    if (process.env.UATU_GITHUB_APP_PRIVATE_KEY) {
+      sharedEnv.UATU_GITHUB_APP_PRIVATE_KEY = process.env.UATU_GITHUB_APP_PRIVATE_KEY.trim();
+    }
+    if (process.env.UATU_GITHUB_OAUTH_CLIENT_ID) {
+      sharedEnv.UATU_GITHUB_OAUTH_CLIENT_ID = process.env.UATU_GITHUB_OAUTH_CLIENT_ID.trim();
+    }
+    if (process.env.UATU_GITHUB_OAUTH_CLIENT_SECRET) {
+      sharedEnv.UATU_GITHUB_OAUTH_CLIENT_SECRET = process.env.UATU_GITHUB_OAUTH_CLIENT_SECRET.trim();
+    }
+    if (process.env.UATU_GITHUB_OAUTH_CALLBACK_URL) {
+      sharedEnv.UATU_GITHUB_OAUTH_CALLBACK_URL = process.env.UATU_GITHUB_OAUTH_CALLBACK_URL.trim();
+    }
+    if (process.env.UATU_GITHUB_WEBHOOK_SECRET) {
+      sharedEnv.UATU_GITHUB_WEBHOOK_SECRET = process.env.UATU_GITHUB_WEBHOOK_SECRET.trim();
+    }
+    if (process.env.UATU_GITHUB_APP_INSTALLATION_ID) {
+      sharedEnv.UATU_GITHUB_APP_INSTALLATION_ID = process.env.UATU_GITHUB_APP_INSTALLATION_ID.trim();
+    }
 
     // Public lambci/git-lambda2 layer (Amazon Linux) so fixture + remediation git works in Lambda.
     const gitLayer = lambda.LayerVersion.fromLayerVersionArn(
@@ -167,9 +196,16 @@ export class UatuShipItStack extends cdk.Stack {
     bus.grantPutEventsTo(apiFn);
     bus.grantPutEventsTo(workerFn);
 
+    const bedrockPolicy = new iam.PolicyStatement({
+      actions: ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+      resources: ["*"],
+    });
+    apiFn.addToRolePolicy(bedrockPolicy);
+    workerFn.addToRolePolicy(bedrockPolicy);
+
     workerFn.addEventSource(new lambdaEventSources.SqsEventSource(jobQueue, { batchSize: 1 }));
 
-    // Phase F: daily scheduled rescan → SQS → worker
+    // Phase F: daily scheduled rescan -> SQS -> worker
     new events.Rule(this, "DailyRescanRule", {
       schedule: events.Schedule.rate(cdk.Duration.hours(24)),
       description: "UATU daily dependency/security rescan of authorized grants",
@@ -180,14 +216,20 @@ export class UatuShipItStack extends cdk.Stack {
       ],
     });
 
+    const allowedOrigins = [
+      webOrigin,
+      "https://uatu-beta.vercel.app",
+      "https://uatu-qrmdac7aa-unstable-kernel.vercel.app",
+      "http://localhost:5173",
+    ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i);
+
     const httpApi = new apigwv2.HttpApi(this, "HttpApi", {
       apiName: "uatu-api",
       description: "UATU Ship It HTTP API (auth/status/enqueue; heavy work on SQS worker)",
       corsPreflight: {
-        allowHeaders: ["content-type", "cookie"],
+        allowHeaders: ["content-type", "cookie", "authorization"],
         allowMethods: [apigwv2.CorsHttpMethod.ANY],
-        // Set UATU_CORS_ORIGIN at deploy time to the Vercel web origin; credentials need explicit origin.
-        allowOrigins: [process.env.UATU_WEB_ORIGIN?.trim() || "http://localhost:5173"],
+        allowOrigins: allowedOrigins,
         allowCredentials: true,
       },
     });
