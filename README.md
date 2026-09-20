@@ -1,6 +1,12 @@
-# UATU: Universal Autonomous Triage & Upkeep
+<p align="center">
+  <img src="./docs/assets/logo.png" alt="UATU Logo" width="220" />
+</p>
 
-**Observe. Understand. Repair. Contribute.**
+<h1 align="center">UATU: Universal Autonomous Triage & Upkeep</h1>
+
+<p align="center">
+  <strong>OBSERVE. UNDERSTAND. REPAIR. CONTRIBUTE.</strong>
+</p>
 
 UATU is an autonomous open-source maintenance and security research agent. It continuously monitors authorized software repositories, maintains a living repository Brain of codebase knowledge, triages bugs and security advisories, formulates minimal verified patches inside isolated sandboxes, and opens reviewable GitHub pull requests.
 

@@ -111,9 +111,12 @@ export function Onboarding({
   return (
     <div className="onboard">
       <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark">UATU</div>
-          <div className="brand-tag">Setup · {user.login}</div>
+        <div className="brand brand-header-group">
+          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+          <div className="brand-text">
+            <div className="brand-mark">UATU</div>
+            <div className="brand-tag">Setup · {user.login}</div>
+          </div>
         </div>
         <div className="topbar-actions">
           <button className="btn btn-ghost" type="button" onClick={onSkipToDashboard}>

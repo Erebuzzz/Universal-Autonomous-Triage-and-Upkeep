@@ -29,8 +29,11 @@ export function Landing({
       </div>
 
       <header className="landing-nav">
-        <div className="brand">
-          <div className="brand-mark">UATU</div>
+        <div className="brand brand-header-group">
+          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+          <div className="brand-text">
+            <div className="brand-mark">UATU</div>
+          </div>
         </div>
         <p className="landing-nav-meta">Universal Autonomous Triage &amp; Upkeep</p>
         <button
@@ -44,8 +47,10 @@ export function Landing({
       </header>
 
       <main className="landing-hero">
+        <img src="/logo.png" alt="UATU Logo" className="landing-hero-logo" />
         <p className="landing-eyebrow">Authorized observation · verified repair · reviewable PRs</p>
         <h1 className="landing-brand">UATU</h1>
+        <p className="landing-tagline">Observe · Understand · Repair · Contribute</p>
         <p className="landing-lede">
           Autonomous triage for repositories you explicitly grant. Policy-bounded writes, auditable
           decisions, and contributions you can review before they land.

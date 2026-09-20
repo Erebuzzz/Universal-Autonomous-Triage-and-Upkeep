@@ -50,9 +50,12 @@ export function BrainMapPreview() {
   const brain = demoBrainMap();
   return (
     <div className="app-shell" style={{ padding: "1.5rem", maxWidth: 960, margin: "0 auto" }}>
-      <header className="brand" style={{ marginBottom: "1rem" }}>
-        <div className="brand-mark">UATU</div>
-        <div className="brand-sub">Brain map · dendrogram preview</div>
+      <header className="brand brand-header-group" style={{ marginBottom: "1rem" }}>
+        <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+        <div className="brand-text">
+          <div className="brand-mark">UATU</div>
+          <div className="brand-sub">Brain map · dendrogram preview</div>
+        </div>
       </header>
       <BrainMapView brain={brain} />
     </div>

@@ -201,8 +201,11 @@ export function OnboardingComplete({
           <div className="landing-grid" />
         </div>
         <header className="landing-nav">
-          <div className="brand">
-            <div className="brand-mark">UATU</div>
+          <div className="brand brand-header-group">
+            <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+            <div className="brand-text">
+              <div className="brand-mark">UATU</div>
+            </div>
           </div>
         </header>
         <main className="complete-main">
@@ -254,9 +257,12 @@ export function OnboardingComplete({
       </div>
 
       <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark">UATU</div>
-          <div className="brand-tag">Connected · {user?.login ?? me.user.login}</div>
+        <div className="brand brand-header-group">
+          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+          <div className="brand-text">
+            <div className="brand-mark">UATU</div>
+            <div className="brand-tag">Connected · {user?.login ?? me.user.login}</div>
+          </div>
         </div>
         <div className="topbar-actions">
           <button

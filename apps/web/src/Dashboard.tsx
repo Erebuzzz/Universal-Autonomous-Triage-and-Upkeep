@@ -152,9 +152,12 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark">UATU</div>
-          <div className="brand-tag">Observe · Understand · Repair · Contribute</div>
+        <div className="brand brand-header-group">
+          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+          <div className="brand-text">
+            <div className="brand-mark">UATU</div>
+            <div className="brand-tag">Observe · Understand · Repair · Contribute</div>
+          </div>
         </div>
         <div className="topbar-actions">
           <div className="mode-chip">

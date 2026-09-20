@@ -231,6 +231,7 @@ export function App() {
   if (gate === "loading") {
     return (
       <div className="boot-screen" role="status" aria-live="polite">
+        <img src="/logo.png" alt="UATU Logo" className="landing-hero-logo" style={{ width: 64, height: 64 }} />
         <div className="brand-mark">UATU</div>
         <p className="brand-tag">Loading operator surface…</p>
         {bootError ? <p className="landing-health-warn">{bootError}</p> : null}

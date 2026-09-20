@@ -88,9 +88,12 @@ export function DocsPage({ onBack }: { onBack: () => void }) {
   return (
     <div className="docs-page">
       <header className="docs-topbar">
-        <div className="docs-brand">
-          <div className="brand-mark">UATU</div>
-          <div className="docs-brand-title">Operator Documentation</div>
+        <div className="brand-header-group" style={{ cursor: "pointer" }} onClick={onBack}>
+          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+          <div className="brand-text">
+            <div className="brand-mark">UATU</div>
+            <div className="brand-tag">Operator Documentation</div>
+          </div>
         </div>
         <div className="docs-topbar-actions">
           <button type="button" className="btn btn-ghost" onClick={onBack}>
