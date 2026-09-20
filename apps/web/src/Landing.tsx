@@ -33,9 +33,9 @@ export function Landing({
           <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
           <div className="brand-text">
             <div className="brand-mark">UATU</div>
+            <div className="brand-tag">Universal Autonomous Triage &amp; Upkeep</div>
           </div>
         </div>
-        <p className="landing-nav-meta">Universal Autonomous Triage &amp; Upkeep</p>
         <button
           type="button"
           className="btn btn-ghost btn-sm"
@@ -47,7 +47,6 @@ export function Landing({
       </header>
 
       <main className="landing-hero">
-        <img src="/logo.png" alt="UATU Logo" className="landing-hero-logo" />
         <p className="landing-eyebrow">Authorized observation · verified repair · reviewable PRs</p>
         <h1 className="landing-brand">UATU</h1>
         <p className="landing-tagline">Observe · Understand · Repair · Contribute</p>
@@ -88,15 +87,7 @@ export function Landing({
           <p className="landing-health-warn" role="status">
             API unreachable: {healthError}. UI still loads; connect the API for live runs.
           </p>
-        ) : (
-          <p className="landing-health-ok" role="status">
-            {oauthConfigured
-              ? "GitHub OAuth ready"
-              : "OAuth unset: local / mock gate active"}
-            {" · "}
-            {authRequired ? "auth required" : "passive local mode"}
-          </p>
-        )}
+        ) : null}
       </main>
 
       <section className="landing-principles" aria-label="Operating principles">
