@@ -1,5 +1,5 @@
 /**
- * Automated PR review (Phase G) — comment only, never merge.
+ * Automated PR review (Phase G): comment only, never merge.
  */
 import {
   getPullRequestDiff,
@@ -48,7 +48,7 @@ function brainContextNotes(brain: BrainGraph | undefined, files: string[]): stri
   }
   const contradicted = brain.synapses.filter((s) => s.kind === "CONTRADICTS").length;
   if (contradicted) {
-    notes.push(`Brain has ${contradicted} CONTRADICTS edge(s) — treat overlapping changes carefully.`);
+    notes.push(`Brain has ${contradicted} CONTRADICTS edge(s): treat overlapping changes carefully.`);
   }
   const touched = brain.neurons.filter(
     (n) =>

@@ -1,14 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ApiError,
   api,
   type AuditEvent,
+  type BedrockModelDescriptor,
   type BrainMap,
   type Finding,
   type Grant,
   type HealthStatus,
   type RemediationTask,
   type UatuUser,
+  simplifyModelName,
 } from "./api";
 import { AuditTrail } from "./AuditTrail";
 import { BrainMapView } from "./BrainMapView";
@@ -19,7 +21,7 @@ const FLOW = [
   "Authorize target",
   "Start remediation",
   "Inspect findings",
-  "Run investigate → patch → verify",
+  "Run investigate -> patch -> verify",
   "Review PR / contribute",
 ] as const;
 
@@ -60,9 +62,23 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
   const [audit, setAudit] = useState<AuditEvent[]>([]);
   const [brain, setBrain] = useState<BrainMap>({ nodes: [], edges: [], activatedIds: [] });
   const [selectedFindingId, setSelectedFindingId] = useState<string | undefined>();
+  const [models, setModels] = useState<BedrockModelDescriptor[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("auto");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [policyDenial, setPolicyDenial] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.listModels()
+      .then((res) => {
+        if (res.models && res.models.length > 0) {
+          setModels(res.models);
+        }
+      })
+      .catch(() => {
+        /* ignore offline fallback */
+      });
+  }, []);
 
   const step = flowIndex(task ?? undefined, grant);
   const selected: Finding | undefined = useMemo(
@@ -99,12 +115,12 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
     setError(null);
     setPolicyDenial(null);
     try {
-      const { task: t } = await api.startTask(grant.id);
+      const { task: t } = await api.startTask(grant.id, "REMEDIATE", selectedModel);
       const detail = await api.getTask(t.id);
       setTask(detail.task);
       setAudit(detail.audit);
       setBrain(detail.brain);
-      const body = await api.advanceTask(t.id);
+      const body = await api.advanceTask(t.id, undefined, selectedModel);
       setTask(body.task);
       setAudit(body.audit);
       setBrain(body.brain);
@@ -122,7 +138,7 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
     setError(null);
     setPolicyDenial(null);
     try {
-      const result = await api.runTask(task.id, selectedFindingId);
+      const result = await api.runTask(task.id, selectedFindingId, selectedModel);
       setTask(result.task);
       setAudit(result.audit);
       setBrain(result.brain);
@@ -193,6 +209,59 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
             ))}
           </ol>
 
+          <div className="model-selector-block" style={{ marginBottom: "1rem" }}>
+            <label
+              htmlFor="model-select"
+              style={{ display: "block", fontSize: "0.8rem", color: "var(--mute)", marginBottom: "0.35rem" }}
+            >
+              Foundation Model
+            </label>
+            <select
+              id="model-select"
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              disabled={busy}
+              style={{
+                width: "100%",
+                background: "var(--surface-elevated, #181c24)",
+                color: "inherit",
+                border: "1px solid var(--border, #2a313d)",
+                borderRadius: "6px",
+                padding: "0.45rem 0.6rem",
+                fontSize: "0.82rem",
+              }}
+            >
+              {models.length > 0 ? (
+                models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.rpm} RPM / {m.tpm} TPM)
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="auto">Auto (Smart Complexity Router)</option>
+                  <option value="nova-micro">Amazon Nova Micro (20 RPM)</option>
+                  <option value="nova-lite">Amazon Nova Lite (20 RPM)</option>
+                  <option value="nova-2-omni">Amazon Nova 2 Omni (20 RPM)</option>
+                  <option value="claude-3-haiku">Claude 3 Haiku (8 RPM)</option>
+                  <option value="claude-haiku-4-5">Claude Haiku 4.5 (10 RPM)</option>
+                  <option value="claude-3-5-sonnet">Claude 3.5 Sonnet v2 (1 RPM)</option>
+                  <option value="claude-sonnet-4-5">Claude Sonnet 4.5 v1 (10 RPM)</option>
+                  <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (10 RPM)</option>
+                  <option value="claude-opus-4-5">Claude Opus 4.5 (5 RPM)</option>
+                  <option value="claude-opus-4-6">Claude Opus 4.6 v1 (5 RPM)</option>
+                  <option value="llama-3-2-3b">Llama 3.2 3B Instruct (16 RPM)</option>
+                  <option value="rules-only">Deterministic Rules Only</option>
+                </>
+              )}
+            </select>
+            {selectedModel === "auto" ? (
+              <p style={{ fontSize: "0.72rem", color: "var(--mute)", margin: "0.3rem 0 0" }}>
+                Auto routes by complexity: Nova Micro for triage, Nova Lite for dependencies, Nova 2 Omni for complex diffs.
+              </p>
+            ) : null}
+          </div>
+
           <div className="actions">
             <button
               className="btn btn-primary"
@@ -217,17 +286,20 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
 
           <div className="status-block">
             <div>
-              Grant: <strong>{grant?.id.slice(0, 8) ?? "—"}</strong>
+              Grant: <strong>{grant?.id.slice(0, 8) ?? "-"}</strong>
             </div>
             <div>
-              Task: <strong>{task?.id.slice(0, 8) ?? "—"}</strong>
+              Task: <strong>{task?.id.slice(0, 8) ?? "-"}</strong>
+            </div>
+            <div>
+              Model: <strong>{simplifyModelName(task?.modelPreference ?? selectedModel)}</strong>
             </div>
             <div>
               State: <strong>{task?.state ?? "PASSIVE"}</strong>
             </div>
             {busy ? (
               <div className="busy-line" aria-live="polite">
-                Working…
+                Working...
               </div>
             ) : null}
           </div>
@@ -257,6 +329,33 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
                     <div className="finding-kind">
                       {f.kind.replace("_", " ")} · {f.severity} · conf{" "}
                       {(f.confidence.value * 100).toFixed(0)}%
+                      {f.confidence.rationale.includes("functional_root_cause") || f.kind === "functional_bug" ? (
+                        <span
+                          className="source-tag"
+                          style={{
+                            marginLeft: "0.5rem",
+                            fontSize: "0.7rem",
+                            background: "rgba(168, 85, 247, 0.15)",
+                            color: "#c084fc",
+                            borderColor: "rgba(168, 85, 247, 0.3)",
+                          }}
+                        >
+                          Nova 2 Omni
+                        </span>
+                      ) : f.kind === "dependency_security" ? (
+                        <span
+                          className="source-tag"
+                          style={{
+                            marginLeft: "0.5rem",
+                            fontSize: "0.7rem",
+                            background: "rgba(59, 130, 246, 0.15)",
+                            color: "#93c5fd",
+                            borderColor: "rgba(59, 130, 246, 0.3)",
+                          }}
+                        >
+                          Nova Lite
+                        </span>
+                      ) : null}
                     </div>
                     <div className="finding-title">{f.title}</div>
                     <div className="finding-meta">{f.summary}</div>

@@ -162,7 +162,11 @@ export class WorkflowOrchestrator {
     return grant;
   }
 
-  async startRun(grantId: string, mode: OperatingMode = "REMEDIATE"): Promise<RemediationTask> {
+  async startRun(
+    grantId: string,
+    mode: OperatingMode = "REMEDIATE",
+    modelPreference?: string,
+  ): Promise<RemediationTask> {
     const grant = await this.deps.store.getGrant(grantId);
     if (!grant) throw new PolicyDeniedError("Unknown grant");
     this.deps.policy.assertCapability({ mode, grant, fixtureRoot: this.deps.fixturePath }, "analyze");
@@ -178,6 +182,7 @@ export class WorkflowOrchestrator {
       state: "DISCOVERED",
       mode,
       findings: [],
+      modelPreference,
       createdAt: now,
       updatedAt: now,
       userId: grant.userId,
@@ -191,14 +196,27 @@ export class WorkflowOrchestrator {
       actor: "supervisor",
       action: "task_created",
       detail: "Remediation task discovered against authorized target",
-      metadata: { userId: task.userId, installationId: task.installationId, source: task.source },
+      metadata: {
+        userId: task.userId,
+        installationId: task.installationId,
+        source: task.source,
+        modelPreference: task.modelPreference,
+      },
     });
     await this.persistAudit();
     return task;
   }
 
-  async advance(taskId: string, selectedFindingId?: string): Promise<RemediationTask> {
+  async advance(
+    taskId: string,
+    selectedFindingId?: string,
+    modelPreference?: string,
+  ): Promise<RemediationTask> {
     let task = await this.requireTask(taskId);
+    if (modelPreference && task.modelPreference !== modelPreference) {
+      task.modelPreference = modelPreference;
+      await this.deps.store.saveTask(task);
+    }
     const grant = task.grantId ? await this.deps.store.getGrant(task.grantId) : undefined;
 
     switch (task.state) {
@@ -247,8 +265,16 @@ export class WorkflowOrchestrator {
     return task;
   }
 
-  async runToCompletion(taskId: string, selectedFindingId?: string): Promise<RemediationTask> {
+  async runToCompletion(
+    taskId: string,
+    selectedFindingId?: string,
+    modelPreference?: string,
+  ): Promise<RemediationTask> {
     let task = await this.requireTask(taskId);
+    if (modelPreference && task.modelPreference !== modelPreference) {
+      task.modelPreference = modelPreference;
+      await this.deps.store.saveTask(task);
+    }
     const terminal = new Set<TaskState>([
       "PR_CREATED",
       "BLOCKED",
@@ -260,14 +286,14 @@ export class WorkflowOrchestrator {
     let guard = 0;
     while (!terminal.has(task.state) && guard < 24) {
       const before = task.state;
-      task = await this.advance(task.id, selectedFindingId);
+      task = await this.advance(task.id, selectedFindingId, modelPreference);
       if (task.state === "PR_ARTIFACT_READY" && !isGitHubLiveEnabled()) break;
       if (task.state === before) {
         // Need selection input
         if (task.state === "TRIAGED" && !selectedFindingId && !task.selectedFindingId) {
           const preferred =
             task.findings.find((f) => f.kind === "functional_bug")?.id ?? task.findings[0]?.id;
-          if (preferred) task = await this.advance(task.id, preferred);
+          if (preferred) task = await this.advance(task.id, preferred, modelPreference);
         }
         if (task.state === before) break;
       }
@@ -288,11 +314,12 @@ export class WorkflowOrchestrator {
       graph.neurons.map((n) => n.id),
       grant,
       task.id,
+      task.modelPreference,
     );
     findings = findings.map((f) => brain.elevateFindingFromSharedDeps(f, graph));
 
     const llm = await decideWithOptionalLlm(
-      { purpose: "triage", prompt: "Prioritize findings" },
+      { purpose: "triage", prompt: "Prioritize findings", modelPreference: task.modelPreference },
       findings
         .map((f) => `${ruleTriagePriority(f.kind)}:${f.id}`)
         .sort()
@@ -303,14 +330,25 @@ export class WorkflowOrchestrator {
       taskId: task.id,
       actor: "research",
       action: "agent_decision",
-      detail: `triage provider=${llm.provider}; reasoning=${llm.reasoning ?? "n/a"}`,
-      metadata: { provider: llm.provider, purpose: "triage", reasoning: llm.reasoning },
+      detail: `triage provider=${llm.provider}; model=${llm.modelId ?? "n/a"} [${llm.modelTier ?? "n/a"}]; reasoning=${llm.reasoning ?? "n/a"}`,
+      metadata: {
+        provider: llm.provider,
+        purpose: "triage",
+        reasoning: llm.reasoning,
+        modelUsed: llm.modelId,
+        modelTier: llm.modelTier,
+      },
     });
 
     task.findings = findings.sort(
       (a, b) => ruleTriagePriority(b.kind) - ruleTriagePriority(a.kind),
     );
-    task = await this.transition(task, "TRIAGED", "research+triage", `Brain initialized; ${findings.length} findings; llm=${llm.provider}`);
+    task = await this.transition(
+      task,
+      "TRIAGED",
+      "research+triage",
+      `Brain initialized; ${findings.length} findings; llm=${llm.provider}${llm.modelId ? ` (${llm.modelId})` : ""}`,
+    );
     this.deps.audit.append({
       taskId: task.id,
       actor: "research",
@@ -329,17 +367,20 @@ export class WorkflowOrchestrator {
       findingSummary: findings[0]?.summary,
       findingKind: findings[0]?.kind,
       availableActions: ["select_top_finding", "select_functional", "select_dependency", "needs_human"],
+      modelPreference: task.modelPreference,
     });
     this.deps.audit.append({
       taskId: task.id,
       actor: "triage",
       action: "agent_decision",
-      detail: `planNextAction=${plan.action}; provider=${plan.provider}; reasoning=${plan.reasoning}`,
+      detail: `planNextAction=${plan.action}; provider=${plan.provider}; model=${plan.modelId ?? "n/a"} [${plan.modelTier ?? "n/a"}]; reasoning=${plan.reasoning}`,
       metadata: {
         provider: plan.provider,
         purpose: "planNextAction",
         action: plan.action,
         reasoning: plan.reasoning,
+        modelUsed: plan.modelId,
+        modelTier: plan.modelTier,
       },
     });
     return task;
@@ -430,17 +471,20 @@ export class WorkflowOrchestrator {
         findingSummary: task.findings[0]?.summary,
         findingKind: task.findings[0]?.kind,
         availableActions: ["select_top_finding", "select_functional", "select_dependency", "needs_human"],
+        modelPreference: task.modelPreference,
       });
       this.deps.audit.append({
         taskId: task.id,
         actor: "triage",
         action: "agent_decision",
-        detail: `select planNextAction=${plan.action}; provider=${plan.provider}; reasoning=${plan.reasoning}`,
+        detail: `select planNextAction=${plan.action}; provider=${plan.provider}; model=${plan.modelId ?? "n/a"} [${plan.modelTier ?? "n/a"}]; reasoning=${plan.reasoning}`,
         metadata: {
           provider: plan.provider,
           purpose: "planNextAction",
           action: plan.action,
           reasoning: plan.reasoning,
+          modelUsed: plan.modelId,
+          modelTier: plan.modelTier,
         },
       });
       if (plan.action === "needs_human") {
@@ -479,11 +523,25 @@ export class WorkflowOrchestrator {
     const finding = task.findings.find((f) => f.id === task.selectedFindingId);
     if (!finding) return this.transition(task, "NEEDS_HUMAN", "investigate", "Finding missing");
 
+    const llm = await decideWithOptionalLlm(
+      {
+        purpose: "deep_investigation",
+        prompt: `Analyze root cause and propose remediation hypothesis for:\nTitle: ${finding.title}\nSummary: ${finding.summary}`,
+        modelPreference: task.modelPreference,
+      },
+      finding.summary,
+    );
+
+    const hypothesisSummary = llm.usedModel && llm.text ? llm.text.slice(0, 500) : finding.summary;
+    const rationale = llm.usedModel
+      ? `LLM deep investigation (${llm.modelId ?? "bedrock"} [${llm.modelTier ?? "advanced"}])`
+      : "Rule-based investigation";
+
     const hypothesis = makeNeuron(
       "Hypothesis",
       `hypothesis:${finding.id}`,
-      { findingId: finding.id, summary: finding.summary },
-      { value: finding.confidence.value, rationale: "Rule-based investigation" },
+      { findingId: finding.id, summary: hypothesisSummary },
+      { value: finding.confidence.value, rationale },
       0.85,
     );
     await this.brainFor(task).upsertNeuron(hypothesis);
@@ -491,7 +549,14 @@ export class WorkflowOrchestrator {
       taskId: task.id,
       actor: "investigate",
       action: "hypothesis_formed",
-      detail: finding.summary,
+      detail: llm.usedModel && llm.text ? llm.text.slice(0, 300) : finding.summary,
+      metadata: {
+        provider: llm.provider,
+        purpose: "deep_investigation",
+        reasoning: llm.reasoning,
+        modelUsed: llm.modelId,
+        modelTier: llm.modelTier,
+      },
     });
     return this.transition(task, "INVESTIGATING", "investigate", "Hypothesis recorded");
   }
@@ -507,17 +572,20 @@ export class WorkflowOrchestrator {
       findingsCount: task.findings.length,
       availableActions: ["accept_root_cause", "low_confidence", "needs_human"],
       extra: `confidence=${finding.confidence.value}`,
+      modelPreference: task.modelPreference,
     });
     this.deps.audit.append({
       taskId: task.id,
       actor: "investigate",
       action: "agent_decision",
-      detail: `planNextAction=${plan.action}; provider=${plan.provider}; reasoning=${plan.reasoning}`,
+      detail: `planNextAction=${plan.action}; provider=${plan.provider}; model=${plan.modelId ?? "n/a"} [${plan.modelTier ?? "n/a"}]; reasoning=${plan.reasoning}`,
       metadata: {
         provider: plan.provider,
         purpose: "planNextAction",
         action: plan.action,
         reasoning: plan.reasoning,
+        modelUsed: plan.modelId,
+        modelTier: plan.modelTier,
       },
     });
 
@@ -903,6 +971,31 @@ export class WorkflowOrchestrator {
       `# ${artifact.title}\n\n${artifact.body}\n`,
       "text/markdown",
     );
+
+    const prReviewLlm = await decideWithOptionalLlm(
+      {
+        purpose: "pr_review_bot",
+        prompt: `Write a concise 2-sentence reviewer summary for PR: ${finding?.title ?? "remediation"}. Files changed: ${(task.patch?.changedFiles ?? []).join(", ")}`,
+        modelPreference: task.modelPreference,
+      },
+      "Automated remediation verified by test suite.",
+    );
+    if (prReviewLlm.usedModel) {
+      this.deps.audit.append({
+        taskId: task.id,
+        actor: "pr_review_bot",
+        action: "agent_decision",
+        detail: `pr_review_bot provider=${prReviewLlm.provider}; model=${prReviewLlm.modelId ?? "n/a"} [${prReviewLlm.modelTier ?? "n/a"}]; reasoning=${prReviewLlm.reasoning ?? "n/a"}`,
+        metadata: {
+          provider: prReviewLlm.provider,
+          purpose: "pr_review_bot",
+          modelUsed: prReviewLlm.modelId,
+          modelTier: prReviewLlm.modelTier,
+          reviewComment: prReviewLlm.text,
+        },
+      });
+    }
+
     return this.transition(task, "READY_FOR_PR", "pr", "PR-ready artifact composed");
   }
 
@@ -1046,6 +1139,7 @@ export class WorkflowOrchestrator {
     neuronIds: string[],
     grant?: AuthorizationGrant,
     taskId?: string,
+    modelPreference?: string,
   ): Promise<Finding[]> {
     const { result, modeUsed } = await withDetectionFallback(
       async () =>
@@ -1054,6 +1148,7 @@ export class WorkflowOrchestrator {
           policy: this.deps.policy,
           grant,
           neuronIds,
+          modelPreference,
         }),
       async () => this.detectFindingsFixture(repoPath, neuronIds),
       (findings) => findings.length === 0,
@@ -1086,7 +1181,7 @@ export class WorkflowOrchestrator {
     return findings;
   }
 
-  /** Hardcoded fixture detectors — left unchanged for camera-ready demos. */
+  /** Hardcoded fixture detectors - left unchanged for camera-ready demos. */
   private async detectFindingsFixture(
     repoPath: string,
     neuronIds: string[],

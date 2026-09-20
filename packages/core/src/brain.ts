@@ -74,7 +74,7 @@ export class RepositoryBrain {
   }
 
   private storageId(): string {
-    // Org-wide graph lives under org:{id}; per-repo under repositoryId — both tenant-keyed.
+    // Org-wide graph lives under org:{id}; per-repo under repositoryId, both tenant-keyed.
     if (this.scope.organizationId) {
       return orgBrainRepositoryId(this.scope.organizationId);
     }

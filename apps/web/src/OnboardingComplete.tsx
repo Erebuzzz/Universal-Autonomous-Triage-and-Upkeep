@@ -96,7 +96,7 @@ export function OnboardingComplete({
         await loadRepos(numeric);
       } catch (e) {
         if (cancelled) return;
-        // Still allow continue — id may already be linked or API unavailable
+        // Still allow continue: id may already be linked or API unavailable
         setError(e instanceof Error ? e.message : String(e));
         setLinkNote("Could not auto-link via API. You can still choose a target below.");
         setPhase("connected");
@@ -359,7 +359,7 @@ export function OnboardingComplete({
                   as <code className="mono-inline">#{installationId}</code>
                 </>
               ) : null}
-              . Next, authorize a triage target — sample fixture for a fast demo, or a linked
+              . Next, authorize a triage target: sample fixture for a fast demo, or a linked
               repository for a sandbox clone. Nothing is written until you grant.
             </p>
             {linkNote ? <p className="complete-status">{linkNote}</p> : null}
@@ -421,7 +421,7 @@ export function OnboardingComplete({
                 <span className="target-kicker">Recommended · demo</span>
                 <span className="target-name">Sample fixture</span>
                 <span className="target-desc">
-                  demo-vulnerable — intentional bug + outdated dependency. Fastest path to findings.
+                  demo-vulnerable: intentional bug + outdated dependency. Fastest path to findings.
                 </span>
               </button>
 

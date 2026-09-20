@@ -15,6 +15,7 @@ export interface LlmCodeReviewOptions {
   /** Paths already flagged by tests or static analysis. */
   flaggedPaths: string[];
   testOutputExcerpt?: string;
+  modelPreference?: string;
 }
 
 function parseReviewJson(text: string): {
@@ -83,6 +84,7 @@ export async function detectLlmCodeReviewFindings(
   const llm = await decideWithOptionalLlm(
     {
       purpose: "code_review",
+      modelPreference: options.modelPreference,
       prompt: [
         "Review the flagged files for bugs and security issues.",
         'Return JSON only: {"issues":[{"path":"...","summary":"...","severity":"low|medium|high|critical","hypothesis":"...","unifiedDiff":"optional unified diff"}]}',

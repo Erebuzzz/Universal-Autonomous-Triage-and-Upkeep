@@ -1,8 +1,19 @@
 /**
  * API client contracts for the dashboard (Phase K).
- * Shared with the backend sibling — extend carefully; do not drop their fields.
+ * Shared with the backend sibling: extend carefully; do not drop their fields.
  */
 export type TaskState = string;
+
+export interface BedrockModelDescriptor {
+  id: string;
+  name: string;
+  provider: string;
+  tier: string;
+  rpm: number;
+  tpm: string;
+  description: string;
+  modelId: string;
+}
 
 export interface Finding {
   id: string;
@@ -31,6 +42,7 @@ export interface RemediationTask {
   state: TaskState;
   findings: Finding[];
   selectedFindingId?: string;
+  modelPreference?: string;
   userId?: string;
   installationId?: number;
   repositoryFullName?: string;
@@ -174,10 +186,10 @@ export class ApiError extends Error {
 
 const base = (import.meta.env.VITE_UATU_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
-/** Public feature flags only — never secrets. */
+/** Public feature flags only: never secrets. */
 export const flags = {
   mockAuth: (import.meta.env.VITE_UATU_MOCK_AUTH as string | undefined) === "true",
-  /** Public App slug from github.com/apps/<slug> — required for install links (no silent default). */
+  /** Public App slug from github.com/apps/<slug>: required for install links (no silent default). */
   githubAppSlug: (import.meta.env.VITE_UATU_GITHUB_APP_SLUG as string | undefined)?.trim() || "",
 };
 
@@ -231,6 +243,25 @@ export function auditDecisionSource(event: AuditEvent): "bedrock" | "rules" | "d
   return null;
 }
 
+export function simplifyModelName(modelId?: string): string {
+  if (!modelId) return "Auto";
+  if (modelId === "auto") return "Auto";
+  if (modelId === "rules" || modelId === "rules-only") return "Rules Only";
+  if (modelId.includes("nova-2-omni")) return "Nova 2 Omni";
+  if (modelId.includes("nova-micro")) return "Nova Micro";
+  if (modelId.includes("nova-lite")) return "Nova Lite";
+  if (modelId.includes("nova-pro")) return "Nova Pro";
+  if (modelId.includes("claude-3-haiku")) return "Claude 3 Haiku";
+  if (modelId.includes("claude-haiku-4-5")) return "Claude Haiku 4.5";
+  if (modelId.includes("claude-3-5-sonnet")) return "Claude 3.5 Sonnet";
+  if (modelId.includes("claude-sonnet-4-5")) return "Claude Sonnet 4.5";
+  if (modelId.includes("claude-sonnet-4-6")) return "Claude Sonnet 4.6";
+  if (modelId.includes("claude-opus-4-5")) return "Claude Opus 4.5";
+  if (modelId.includes("claude-opus-4-6")) return "Claude Opus 4.6";
+  if (modelId.includes("llama3-2-3b") || modelId.includes("llama-3-2-3b")) return "Llama 3.2 3B";
+  return modelId.replace(/^(global|apac|us)\./, "").replace(/(-v\d+:\d+|\.v\d+:\d+)$/, "");
+}
+
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
@@ -241,7 +272,7 @@ async function req<T>(url: string, init?: RequestInit): Promise<T> {
     });
   } catch (e) {
     throw new ApiError(
-      e instanceof Error ? e.message : "Network error — is the API running?",
+      e instanceof Error ? e.message : "Network error: is the API running?",
       0,
       "network",
     );
@@ -273,6 +304,7 @@ export const api = {
   /** Browser navigates here for OAuth (full page). */
   githubLoginUrl: () => oauthLoginUrl(),
   logout: () => req<{ ok: boolean }>("/auth/logout", { method: "POST", body: "{}" }),
+  listModels: () => req<{ models: BedrockModelDescriptor[]; default: string }>("/api/models"),
   listInstallationRepos: (installationId: number) =>
     req<{ repos: InstallationRepo[]; message?: string }>(`/api/installations/${installationId}/repos`),
   linkInstallation: (installationId: number) =>
@@ -281,7 +313,7 @@ export const api = {
       body: JSON.stringify({ installationId }),
     }),
   listGrants: () => req<{ grants: Grant[] }>("/api/grants"),
-  /** Never send grantedBy — server uses session user. */
+  /** Never send grantedBy: server uses session user. */
   createFixtureGrant: (notes?: string) =>
     req<{ grant: Grant }>("/api/grants", {
       method: "POST",
@@ -296,22 +328,22 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ source: "github", ...input }),
     }),
-  /** @deprecated use createFixtureGrant — grantedBy is ignored by API */
+  /** @deprecated use createFixtureGrant: grantedBy is ignored by API */
   createGrant: (_grantedBy: string) => api.createFixtureGrant(),
-  startTask: (grantId: string) =>
+  startTask: (grantId: string, mode = "REMEDIATE", modelPreference?: string) =>
     req<{ task: RemediationTask }>("/api/tasks", {
       method: "POST",
-      body: JSON.stringify({ grantId, mode: "REMEDIATE" }),
+      body: JSON.stringify({ grantId, mode, modelPreference }),
     }),
-  advanceTask: (id: string) =>
+  advanceTask: (id: string, selectedFindingId?: string, modelPreference?: string) =>
     req<{ task: RemediationTask; audit: AuditEvent[]; brain: BrainMap; message?: string }>(
       `/api/tasks/${id}/advance`,
-      { method: "POST", body: "{}" },
+      { method: "POST", body: JSON.stringify({ selectedFindingId, modelPreference }) },
     ),
-  runTask: (id: string, selectedFindingId?: string) =>
+  runTask: (id: string, selectedFindingId?: string, modelPreference?: string) =>
     req<{ task: RemediationTask; audit: AuditEvent[]; brain: BrainMap }>(`/api/tasks/${id}/run`, {
       method: "POST",
-      body: JSON.stringify({ selectedFindingId }),
+      body: JSON.stringify({ selectedFindingId, modelPreference }),
     }),
   getTask: (id: string) =>
     req<{ task: RemediationTask; audit: AuditEvent[]; brain: BrainMap }>(`/api/tasks/${id}`),

@@ -7,6 +7,7 @@ import {
   listInstallationRepos,
   isGitHubAppConfigured,
   redactSecrets,
+  getModelCatalog,
 } from "@uatu/core";
 import type { WorkflowOrchestrator, AuditTrail, JsonFileStore } from "@uatu/core";
 import type { UatuUser } from "@uatu/domain";
@@ -130,7 +131,7 @@ export function createHttpApp(ctx: AppContext): express.Express {
     }),
   );
 
-  // GitHub webhooks need the raw body for HMAC — register before JSON parser.
+  // GitHub webhooks need the raw body for HMAC: register before JSON parser.
   app.post(
     "/api/webhooks/github",
     express.raw({ type: "application/json", limit: "1mb" }),
@@ -169,7 +170,7 @@ export function createHttpApp(ctx: AppContext): express.Express {
     });
   });
 
-  // —— Auth (K2) ——
+  // -- Auth (K2) --
   app.get("/auth/github", (_req, res) => {
     if (!isOAuthConfigured()) {
       res.status(503).json({
@@ -249,7 +250,7 @@ export function createHttpApp(ctx: AppContext): express.Express {
     });
   });
 
-  // —— Grants (K4: grantedBy from session, never body spoof) ——
+  // -- Grants (K4: grantedBy from session, never body spoof) --
   app.get("/api/grants", authed, async (req, res) => {
     const user = getRequestUser(req)!;
     const grants = tenantFilter(await store.listGrants(), user);
@@ -331,7 +332,7 @@ export function createHttpApp(ctx: AppContext): express.Express {
     }
   });
 
-  // —— Repo picker (K3) ——
+  // -- Repo picker (K3) --
   app.get("/api/installations/:id/repos", authed, async (req, res) => {
     try {
       const user = getRequestUser(req)!;
@@ -371,6 +372,13 @@ export function createHttpApp(ctx: AppContext): express.Express {
     }
   });
 
+  app.get("/api/models", (_req, res) => {
+    res.json({
+      models: getModelCatalog(),
+      default: "auto",
+    });
+  });
+
   app.get("/api/tasks", authed, async (req, res) => {
     const user = getRequestUser(req)!;
     res.json({ tasks: tenantFilter(await store.listTasks(), user) });
@@ -401,7 +409,12 @@ export function createHttpApp(ctx: AppContext): express.Express {
         res.status(403).json({ error: "grant_forbidden" });
         return;
       }
-      const task = await orchestrator.startRun(grantId, req.body.mode ?? "REMEDIATE");
+      const modelPreference = req.body.modelPreference ? String(req.body.modelPreference) : undefined;
+      const task = await orchestrator.startRun(
+        grantId,
+        req.body.mode ?? "REMEDIATE",
+        modelPreference,
+      );
       res.status(201).json({ task });
     } catch (err) {
       handleError(res, err);
@@ -416,7 +429,12 @@ export function createHttpApp(ctx: AppContext): express.Express {
         res.status(404).json({ error: "not_found" });
         return;
       }
-      const task = await orchestrator.advance(paramId(req), req.body.selectedFindingId);
+      const modelPreference = req.body.modelPreference ? String(req.body.modelPreference) : undefined;
+      const task = await orchestrator.advance(
+        paramId(req),
+        req.body.selectedFindingId,
+        modelPreference,
+      );
       res.json({
         task,
         audit: audit.forTask(task.id),
@@ -435,6 +453,9 @@ export function createHttpApp(ctx: AppContext): express.Express {
         res.status(404).json({ error: "not_found" });
         return;
       }
+      const modelPreference = req.body.modelPreference
+        ? String(req.body.modelPreference)
+        : existing.modelPreference;
 
       if (asyncJobs && jobQueueUrl) {
         await quota.beginRun(user.id);
@@ -447,6 +468,7 @@ export function createHttpApp(ctx: AppContext): express.Express {
               taskId: paramId(req),
               selectedFindingId: req.body.selectedFindingId,
               userId: user.id,
+              modelPreference,
             }),
           }),
         );
@@ -454,8 +476,8 @@ export function createHttpApp(ctx: AppContext): express.Express {
           taskId: paramId(req),
           actor: user.login,
           action: "run_enqueued",
-          detail: "Remediation queued for worker Lambda",
-          metadata: { userId: user.id },
+          detail: `Remediation queued for worker Lambda${modelPreference ? ` (model: ${modelPreference})` : ""}`,
+          metadata: { userId: user.id, modelPreference },
         });
         await store.saveEvents(audit.all());
         const task = await store.getTask(paramId(req));
@@ -478,6 +500,7 @@ export function createHttpApp(ctx: AppContext): express.Express {
           userId: user.id,
           bedrockEnabled: process.env.UATU_BEDROCK_ENABLED === "true",
           sandbox: existing.repositoryPath,
+          modelPreference,
         },
       });
       await store.saveEvents(audit.all());
@@ -485,7 +508,7 @@ export function createHttpApp(ctx: AppContext): express.Express {
       try {
         const task = await withWallClock(
           limits.wallClockMs,
-          () => orchestrator.runToCompletion(paramId(req), req.body.selectedFindingId),
+          () => orchestrator.runToCompletion(paramId(req), req.body.selectedFindingId, modelPreference),
           () => {
             audit.append({
               taskId: paramId(req),

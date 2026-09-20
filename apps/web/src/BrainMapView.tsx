@@ -771,7 +771,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
               const dimmed = selectedId != null && !isNeighbor;
               const isHover = hoverId === n.id;
               const r = nodeRadius(n.kind, isActivated, isSelected);
-              // Labels only on hover/selection — prevents path bleed on dense trees
+              // Labels only on hover/selection: prevents path bleed on dense trees
               const showLabel = isSelected || isHover;
 
               return (

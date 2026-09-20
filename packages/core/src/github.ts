@@ -205,7 +205,7 @@ export interface PullRequestReviewInput {
 }
 
 /**
- * Post a bot-authored PR review. Never merges — event defaults to COMMENT only.
+ * Post a bot-authored PR review. Never merges: event defaults to COMMENT only.
  */
 export async function submitPullRequestReview(
   input: PullRequestReviewInput,
@@ -222,7 +222,7 @@ export async function submitPullRequestReview(
   const labeledBody = [
     "### UATU automated review (bot)",
     "",
-    "_Comment-only review — UATU does not merge pull requests._",
+    "_Comment-only review: UATU does not merge pull requests._",
     "",
     input.body,
   ].join("\n");
@@ -322,7 +322,7 @@ export interface AppInstallationSummary {
   account: { id: number; login: string; type: string };
 }
 
-/** App JWT lookup — used to verify installation ownership without trusting client input. */
+/** App JWT lookup: used to verify installation ownership without trusting client input. */
 export async function getAppInstallation(installationId: number): Promise<AppInstallationSummary> {
   const appId = process.env.UATU_GITHUB_APP_ID?.trim();
   const privateKey = readPrivateKey();

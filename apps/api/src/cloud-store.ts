@@ -131,7 +131,7 @@ export class CloudUatuStore
       }),
     );
     if (res.Item) return stripKeys(res.Item) as unknown as BrainGraph;
-    // Legacy unscoped key (pre-tenant) — only when no userId partition requested.
+    // Legacy unscoped key (pre-tenant): only when no userId partition requested.
     if (!userId) {
       const legacy = await this.ddb.send(
         new GetCommand({

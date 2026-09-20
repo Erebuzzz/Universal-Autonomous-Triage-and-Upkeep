@@ -263,7 +263,7 @@ export async function detectStaticAnalysisFindings(
       id: randomUUID(),
       kind: "functional_bug",
       title: `Static: ${hit.summary} in ${hit.path}`,
-      summary: `${hit.ruleId} at ${hit.path}:${hit.line} — ${hit.summary}`,
+      summary: `${hit.ruleId} at ${hit.path}:${hit.line}: ${hit.summary}`,
       severity: hit.severity,
       confidence: {
         value: hit.ruleId.startsWith("security/") ? 0.85 : 0.72,

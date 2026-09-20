@@ -232,7 +232,7 @@ export function Onboarding({
                 disabled={busy}
                 onClick={() => setStep("pick")}
               >
-                Skip install — use fixture
+                Skip install: use fixture
               </button>
             </div>
           </section>
@@ -256,7 +256,7 @@ export function Onboarding({
                 <span className="target-kicker">Recommended · demo</span>
                 <span className="target-name">Sample fixture</span>
                 <span className="target-desc">
-                  demo-vulnerable — intentional bug + outdated dependency. Fastest path to findings,
+                  demo-vulnerable: intentional bug + outdated dependency. Fastest path to findings,
                   brain map, and a PR artifact.
                 </span>
               </button>

@@ -1,7 +1,7 @@
 import type { BrainMap } from "./api";
 import { BrainMapView } from "./BrainMapView";
 
-/** Local-only fixture — nested paths exercise dendrogram layout. */
+/** Local-only fixture: nested paths exercise dendrogram layout. */
 export function demoBrainMap(): BrainMap {
   const nodes: BrainMap["nodes"] = [
     { id: "org", kind: "Organization", label: "acme-labs", status: "ACTIVE", confidence: 1 },

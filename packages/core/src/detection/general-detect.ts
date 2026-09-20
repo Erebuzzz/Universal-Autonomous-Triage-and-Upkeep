@@ -18,6 +18,7 @@ export interface GeneralDetectOptions {
   policy: AuthorizationPolicy;
   grant?: AuthorizationGrant;
   neuronIds: string[];
+  modelPreference?: string;
 }
 
 function extractReferencedPaths(output: string): string[] {
@@ -105,6 +106,7 @@ async function detectFunctionalFromFailingTests(
   const llm = await decideWithOptionalLlm(
     {
       purpose: "functional_root_cause",
+      modelPreference: options.modelPreference,
       prompt: [
         "Failing tests detected. Propose a minimal unified diff fix.",
         "Return JSON only: {\"hypothesis\":\"...\",\"unifiedDiff\":\"...\"}",
@@ -141,7 +143,7 @@ async function detectFunctionalFromFailingTests(
       {
         id: randomUUID(),
         kind: "functional_bug",
-        title: "Failing tests — LLM root-cause hypothesis",
+        title: "Failing tests - LLM root-cause hypothesis",
         summary: hypothesis.slice(0, 500),
         severity: "medium",
         confidence: {

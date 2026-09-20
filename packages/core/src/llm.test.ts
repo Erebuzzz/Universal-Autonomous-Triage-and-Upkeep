@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it, beforeEach, afterEach } from "node:test";
 import {
   decideWithOptionalLlm,
+  getModelCatalog,
   planNextAction,
+  resolveModelByComplexity,
   setBedrockInvokerForTests,
 } from "./llm.js";
 
@@ -85,5 +87,84 @@ describe("llm Bedrock adapter", () => {
     });
     assert.equal(plan.provider, "rules");
     assert.equal(plan.action, "select_top_finding");
+  });
+
+  it("getModelCatalog returns valid descriptors including Nova 2 Omni", () => {
+    const catalog = getModelCatalog();
+    assert.ok(catalog.length >= 10);
+    const omni = catalog.find((m) => m.id === "nova-2-omni");
+    assert.ok(omni);
+    assert.equal(omni.modelId, "global.amazon.nova-2-omni-v1:0");
+    assert.equal(omni.rpm, 20);
+    assert.equal(omni.tpm, "8M");
+  });
+
+  it("resolveModelByComplexity routes high complexity to Nova 2 Omni", () => {
+    const high1 = resolveModelByComplexity("functional_root_cause");
+    assert.equal(high1.modelId, "global.amazon.nova-2-omni-v1:0");
+    assert.equal(high1.modelTier, "advanced");
+
+    const high2 = resolveModelByComplexity("propose_diff");
+    assert.equal(high2.modelId, "global.amazon.nova-2-omni-v1:0");
+
+    const high3 = resolveModelByComplexity("deep_investigation");
+    assert.equal(high3.modelId, "global.amazon.nova-2-omni-v1:0");
+  });
+
+  it("resolveModelByComplexity routes medium complexity to Nova Lite", () => {
+    const mid1 = resolveModelByComplexity("code_review");
+    assert.equal(mid1.modelId, "apac.amazon.nova-lite-v1:0");
+    assert.equal(mid1.modelTier, "balanced");
+
+    const mid2 = resolveModelByComplexity("dependency_security");
+    assert.equal(mid2.modelId, "apac.amazon.nova-lite-v1:0");
+  });
+
+  it("resolveModelByComplexity routes low complexity to Nova Micro", () => {
+    const low = resolveModelByComplexity("triage");
+    assert.equal(low.modelId, "apac.amazon.nova-micro-v1:0");
+    assert.equal(low.modelTier, "fast");
+  });
+
+  it("resolveModelByComplexity respects explicit user preference", () => {
+    const pref1 = resolveModelByComplexity("triage", "claude-3-haiku");
+    assert.equal(pref1.modelId, "apac.anthropic.claude-3-haiku-20240307-v1:0");
+    assert.equal(pref1.modelTier, "fast");
+
+    const prefRules = resolveModelByComplexity("functional_root_cause", "rules-only");
+    assert.equal(prefRules.modelId, "rules");
+    assert.equal(prefRules.modelTier, "rules");
+
+    const prefOmni = resolveModelByComplexity("triage", "nova-2-omni");
+    assert.equal(prefOmni.modelId, "global.amazon.nova-2-omni-v1:0");
+  });
+
+  it("cascades to fallback on ThrottlingException (429)", async () => {
+    process.env.UATU_BEDROCK_ENABLED = "true";
+    process.env.UATU_BEDROCK_MODEL_ID = "apac.amazon.nova-micro-v1:0";
+
+    let callCount = 0;
+    setBedrockInvokerForTests(async ({ modelId }) => {
+      callCount += 1;
+      if (modelId === "global.amazon.nova-2-omni-v1:0") {
+        throw new Error("ThrottlingException: Rate exceeded (429)");
+      }
+      return "fallback-success";
+    });
+
+    const result = await decideWithOptionalLlm(
+      {
+        purpose: "functional_root_cause",
+        prompt: "analyze patch",
+      },
+      "rule-fallback",
+    );
+
+    assert.equal(callCount, 2);
+    assert.equal(result.provider, "bedrock");
+    assert.equal(result.text, "fallback-success");
+    assert.equal(result.modelId, "apac.amazon.nova-micro-v1:0");
+    assert.equal(result.modelTier, "fast-fallback");
+    assert.ok(result.reasoning?.includes("cascaded to fallback"));
   });
 });

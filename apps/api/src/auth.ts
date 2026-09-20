@@ -202,7 +202,7 @@ export async function exchangeOauthCode(code: string): Promise<{
   });
   const user = (await userRes.json()) as { id: number; login: string; avatar_url?: string };
   if (!user?.id || !user.login) throw new Error("oauth_user_fetch_failed");
-  // Intentionally discard access_token after identity hydration — never send to browser.
+  // Intentionally discard access_token after identity hydration: never send to browser.
   void createHash("sha256").update(tokenBody.access_token).digest("hex");
   return { accessToken: tokenBody.access_token, user };
 }

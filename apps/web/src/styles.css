@@ -80,7 +80,7 @@ a {
   outline-offset: 2px;
 }
 
-/* —— Shell / topbar —— */
+/* -- Shell / topbar -- */
 
 .app-shell {
   display: grid;
@@ -352,7 +352,7 @@ a {
   color: var(--text-dim);
 }
 
-/* —— Neural repository map (Pixasso) —— */
+/* -- Neural repository map (Pixasso) -- */
 
 .brain-map {
   position: relative;
@@ -860,7 +860,7 @@ a {
   background: var(--deny-bg);
 }
 
-/* —— Policy scope bar —— */
+/* -- Policy scope bar -- */
 
 .policy-scope {
   border-bottom: 1px solid var(--ink-line);
@@ -956,7 +956,7 @@ a {
   font-size: 0.9rem;
 }
 
-/* —— Boot —— */
+/* -- Boot -- */
 
 .boot-screen {
   min-height: 100vh;
@@ -968,7 +968,7 @@ a {
   padding: var(--space-6);
 }
 
-/* —— Landing —— */
+/* -- Landing -- */
 
 .landing {
   position: relative;
@@ -1152,7 +1152,7 @@ a {
   color: var(--mute);
 }
 
-/* —— Post-install complete —— */
+/* -- Post-install complete -- */
 
 .complete-shell {
   position: relative;
@@ -1219,7 +1219,7 @@ a {
   color: var(--signal-soft);
 }
 
-/* —— Onboarding —— */
+/* -- Onboarding -- */
 
 .onboard {
   min-height: 100vh;
@@ -1422,7 +1422,7 @@ button.target-option:hover:not(:disabled) {
   background: rgba(201, 132, 42, 0.06);
 }
 
-/* —— Motion —— */
+/* -- Motion -- */
 
 @keyframes rise {
   from {

@@ -62,7 +62,7 @@ export function Landing({
               type="button"
               disabled={busy}
               onClick={onMockSignIn}
-              title="OAuth not configured on the API — use local demo or set VITE_UATU_MOCK_AUTH"
+              title="OAuth not configured on the API: use local demo or set VITE_UATU_MOCK_AUTH"
             >
               {flags.mockAuth ? "Enter with mock session" : "Continue with local demo"}
             </button>
@@ -87,7 +87,7 @@ export function Landing({
           <p className="landing-health-ok" role="status">
             {oauthConfigured
               ? "GitHub OAuth ready"
-              : "OAuth unset — local / mock gate active"}
+              : "OAuth unset: local / mock gate active"}
             {" · "}
             {authRequired ? "auth required" : "passive local mode"}
           </p>

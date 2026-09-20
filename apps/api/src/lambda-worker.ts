@@ -5,8 +5,9 @@ interface JobMessage {
   type: "run_to_completion" | "advance" | "scheduled_rescan";
   taskId?: string;
   selectedFindingId?: string;
-  /** Enqueuing user — must match task.userId before work runs. */
+  /** Enqueuing user: must match task.userId before work runs. */
   userId?: string;
+  modelPreference?: string;
 }
 
 export const handler: SQSHandler = async (event) => {
@@ -51,12 +52,16 @@ export const handler: SQSHandler = async (event) => {
     }
 
     if (job.type === "advance") {
-      await ctx.orchestrator.advance(job.taskId, job.selectedFindingId);
+      await ctx.orchestrator.advance(job.taskId, job.selectedFindingId, job.modelPreference);
       continue;
     }
 
     if (job.type === "run_to_completion") {
-      const completed = await ctx.orchestrator.runToCompletion(job.taskId, job.selectedFindingId);
+      const completed = await ctx.orchestrator.runToCompletion(
+        job.taskId,
+        job.selectedFindingId,
+        job.modelPreference,
+      );
       if (completed.prArtifact?.body) {
         await ctx.store.put(
           `artifacts/${completed.id}/pr.md`,

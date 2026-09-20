@@ -176,6 +176,13 @@ graph TD
 - **Phase G (Automated PR Review Bot):** Autonomous PR code review bot providing detailed inline code comments and risk assessments without requiring repository merge permissions.
 - **Phase K (Multi-Tenant Access & Split Cloud):** GitHub OAuth flow, HTTP-only secure cookie session management, dynamic installation access token minting, per-user daily and monthly quotas, and directory-level sandbox isolation.
 - **Amazon Bedrock AI Reasoning:** Integrated live with APAC Nova Micro (`apac.amazon.nova-micro-v1:0`) in `ap-south-1`, returning structured JSON remediation plans with automatic deterministic rule fallback.
+- **Multi-Model Selection & Smart Complexity Router:** Users can select specific foundation models from a live catalog, or let the autonomous Smart Complexity Router optimize model assignment by task difficulty:
+  - **Low Complexity (Triage, PR Review, Action Planning):** Amazon Nova Micro (`apac.amazon.nova-micro-v1:0`, 20 RPM / 400K TPM).
+  - **Medium Complexity (Dependency Audits, Code Review):** Amazon Nova Lite (`apac.amazon.nova-lite-v1:0`, 20 RPM / 400K TPM).
+  - **High Complexity (Deep Root-Cause Investigation, Unified Diff Synthesis):** Amazon Nova 2 Omni (`global.amazon.nova-2-omni-v1:0`, 20 RPM / 8M TPM).
+  - **User-Selectable Models:** Claude 3 Haiku, Claude Haiku 4.5, Claude 3.5 Sonnet v2, Claude Sonnet 4.5 v1, Claude Sonnet 4.6, Claude Opus 4.5, Claude Opus 4.6 v1, Meta Llama 3.2 3B Instruct, or Deterministic Rules Only.
+  - **Automated Quota Cascade:** If a model hits a `ThrottlingException` (HTTP 429) or quota limit, the workflow engine automatically cascades to high-throughput secondary fallbacks and audits the cascade in the execution timeline.
+  - **Per-Step Model Badges:** Every audit row and finding in the UI explicitly displays the model that powered that step (e.g. `[Nova Micro: Triage]`, `[Nova 2 Omni: Patch]`).
 
 ---
 

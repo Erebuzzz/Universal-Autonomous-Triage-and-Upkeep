@@ -20,7 +20,7 @@ export type Capability =
   | "draft_pr"
   | "security_research";
 
-/** Grant operating scope — security scans require an explicit security-research grant. */
+/** Grant operating scope: security scans require an explicit security-research grant. */
 export type GrantScope = "general" | "security-research";
 
 export type TaskState =
@@ -195,11 +195,41 @@ export interface BrainGraph {
   neurons: Neuron[];
   synapses: Synapse[];
   updatedAt: string;
-  /** Tenant partition — required for multi-user isolation. */
+  /** Tenant partition: required for multi-user isolation. */
   userId?: string;
   /** Org-wide graph root when spanning multiple repositories. */
   organizationId?: string;
 }
+
+export type ModelTier = "fast" | "balanced" | "advanced" | "flagship" | "auto" | "rules";
+
+export interface BedrockModelDescriptor {
+  id: string;
+  name: string;
+  provider: string;
+  tier: ModelTier;
+  rpm: number;
+  tpm: string;
+  description: string;
+  modelId: string;
+}
+
+export type ModelPreference =
+  | "auto"
+  | "nova-micro"
+  | "nova-lite"
+  | "nova-2-omni"
+  | "nova-pro"
+  | "claude-3-haiku"
+  | "claude-haiku-4-5"
+  | "claude-3-5-sonnet"
+  | "claude-sonnet-4-5"
+  | "claude-sonnet-4-6"
+  | "claude-opus-4-5"
+  | "claude-opus-4-6"
+  | "llama-3-2-3b"
+  | "rules-only"
+  | string;
 
 export interface AuditEvent {
   id: string;
@@ -304,6 +334,8 @@ export interface RemediationTask {
   /** owner/name when source is github. */
   repositoryFullName?: string;
   source?: "fixture" | "github";
+  /** Optional model preference selected by user (defaults to 'auto'). */
+  modelPreference?: ModelPreference;
 }
 
 export interface BrainMapNode {

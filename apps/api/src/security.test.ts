@@ -189,7 +189,7 @@ describe("installation ownership", () => {
 
 describe("clone error redaction", () => {
   it("redacts x-access-token from clone error text", () => {
-    // Opaque placeholder — not a real token shape the static scanner should flag in prod repos.
+    // Opaque placeholder: not a real token shape the static scanner should flag in prod repos.
     const leakToken = "REDACT_ME_PLACEHOLDER_0001";
     const leaked = `fatal: unable to access 'https://x-access-token:${leakToken}@github.com/acme/demo.git/': The requested URL returned error: 403`;
     const redacted = redactCloneErrorMessage(leaked);

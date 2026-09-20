@@ -10,7 +10,7 @@ type Props = {
 export function PolicyScopeBar({ grant, health, policyDenial, onDismissDenial }: Props) {
   const caps = grant?.capabilities?.length ? grant.capabilities.join(" · ") : "none";
   const source = grant?.source ?? (grant ? "fixture" : null);
-  const repo = grant?.repositoryFullName ?? grant?.repositoryName ?? "—";
+  const repo = grant?.repositoryFullName ?? grant?.repositoryName ?? "-";
 
   return (
     <div className="policy-scope" role="region" aria-label="Authorization and policy scope">
@@ -26,7 +26,7 @@ export function PolicyScopeBar({ grant, health, policyDenial, onDismissDenial }:
         <div>
           <span className="policy-label">Source</span>
           <span className={`policy-pill ${source === "github" ? "pill-gh" : source ? "pill-fx" : ""}`}>
-            {source ?? "—"}
+            {source ?? "-"}
           </span>
         </div>
         <div>
