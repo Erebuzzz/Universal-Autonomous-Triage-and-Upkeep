@@ -5,6 +5,7 @@ import * as apigwv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as integrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
+import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction, OutputFormat } from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
@@ -79,6 +80,11 @@ export class UatuShipItStack extends cdk.Stack {
       UATU_PASSIVE_MODE: "true",
       UATU_ASYNC_JOBS: "true",
       UATU_DATA_DIR: "/tmp/uatu-data",
+      // Default fail-closed for deployed stacks; override explicitly for break-glass demos.
+      UATU_AUTH_REQUIRED: process.env.UATU_AUTH_REQUIRED ?? "true",
+      UATU_CORS_ORIGIN: process.env.UATU_WEB_ORIGIN?.trim() || "http://localhost:5173",
+      UATU_CORS_CREDENTIALS: "true",
+      UATU_WEB_ORIGIN: process.env.UATU_WEB_ORIGIN?.trim() || "http://localhost:5173",
       // git-lambda2 layer installs binaries under /opt/bin
       PATH: "/opt/bin:/usr/local/bin:/usr/bin:/bin",
       GIT_TEMPLATE_DIR: "/opt/share/git-core/templates",
@@ -163,13 +169,26 @@ export class UatuShipItStack extends cdk.Stack {
 
     workerFn.addEventSource(new lambdaEventSources.SqsEventSource(jobQueue, { batchSize: 1 }));
 
+    // Phase F: daily scheduled rescan → SQS → worker
+    new events.Rule(this, "DailyRescanRule", {
+      schedule: events.Schedule.rate(cdk.Duration.hours(24)),
+      description: "UATU daily dependency/security rescan of authorized grants",
+      targets: [
+        new targets.SqsQueue(jobQueue, {
+          message: events.RuleTargetInput.fromObject({ type: "scheduled_rescan" }),
+        }),
+      ],
+    });
+
     const httpApi = new apigwv2.HttpApi(this, "HttpApi", {
       apiName: "uatu-api",
-      description: "UATU Ship It HTTP API",
+      description: "UATU Ship It HTTP API (auth/status/enqueue; heavy work on SQS worker)",
       corsPreflight: {
-        allowHeaders: ["content-type"],
+        allowHeaders: ["content-type", "cookie"],
         allowMethods: [apigwv2.CorsHttpMethod.ANY],
-        allowOrigins: ["*"],
+        // Set UATU_CORS_ORIGIN at deploy time to the Vercel web origin; credentials need explicit origin.
+        allowOrigins: [process.env.UATU_WEB_ORIGIN?.trim() || "http://localhost:5173"],
+        allowCredentials: true,
       },
     });
 

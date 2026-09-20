@@ -16,16 +16,20 @@ export const REPO_ROOT = resolveRepoRoot();
 
 export function resolvePaths() {
   const isLambda = Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
-  const dataDir = path.resolve(
-    process.env.UATU_DATA_DIR ?? (isLambda ? "/tmp/uatu-data" : path.join(REPO_ROOT, "data")),
+  const resolveFromRoot = (value: string) =>
+    path.isAbsolute(value) ? path.resolve(value) : path.resolve(REPO_ROOT, value);
+  const dataDir = resolveFromRoot(
+    process.env.UATU_DATA_DIR?.trim() || (isLambda ? "/tmp/uatu-data" : "data"),
   );
   const defaultSeed = isLambda
     ? path.join(process.env.LAMBDA_TASK_ROOT ?? "/var/task", "fixture-seed")
     : path.join(REPO_ROOT, "fixtures", "demo-vulnerable");
-  const seedFixture = path.resolve(process.env.UATU_FIXTURE_SEED ?? defaultSeed);
-  const fixturePath = path.resolve(
-    process.env.UATU_FIXTURE_PATH ?? path.join(dataDir, "sandbox", "demo-vulnerable"),
-  );
+  const seedRaw = process.env.UATU_FIXTURE_SEED?.trim();
+  const seedFixture = seedRaw ? resolveFromRoot(seedRaw) : defaultSeed;
+  const fixtureRaw = process.env.UATU_FIXTURE_PATH?.trim();
+  const fixturePath = fixtureRaw
+    ? resolveFromRoot(fixtureRaw)
+    : path.join(dataDir, "sandbox", "demo-vulnerable");
   return { dataDir, seedFixture, fixturePath };
 }
 

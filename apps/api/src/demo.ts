@@ -1,3 +1,6 @@
+import { loadLocalEnv } from "./load-local-env.js";
+loadLocalEnv();
+
 import { createAppServices } from "./services.js";
 
 async function demo() {

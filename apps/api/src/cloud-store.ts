@@ -108,11 +108,12 @@ export class CloudUatuStore
   }
 
   async saveBrain(graph: BrainGraph): Promise<void> {
+    const tenant = graph.userId ? `TENANT#${graph.userId}` : "TENANT#shared";
     await this.ddb.send(
       new PutCommand({
         TableName: this.tableName,
         Item: {
-          pk: `BRAIN#${graph.repositoryId}`,
+          pk: `${tenant}#BRAIN#${graph.repositoryId}`,
           sk: "META",
           entityType: "brain",
           ...graph,
@@ -121,14 +122,26 @@ export class CloudUatuStore
     );
   }
 
-  async getBrain(repositoryId: string): Promise<BrainGraph | undefined> {
+  async getBrain(repositoryId: string, userId?: string): Promise<BrainGraph | undefined> {
+    const tenant = userId ? `TENANT#${userId}` : "TENANT#shared";
     const res = await this.ddb.send(
       new GetCommand({
         TableName: this.tableName,
-        Key: { pk: `BRAIN#${repositoryId}`, sk: "META" },
+        Key: { pk: `${tenant}#BRAIN#${repositoryId}`, sk: "META" },
       }),
     );
-    return res.Item ? (stripKeys(res.Item) as unknown as BrainGraph) : undefined;
+    if (res.Item) return stripKeys(res.Item) as unknown as BrainGraph;
+    // Legacy unscoped key (pre-tenant) — only when no userId partition requested.
+    if (!userId) {
+      const legacy = await this.ddb.send(
+        new GetCommand({
+          TableName: this.tableName,
+          Key: { pk: `BRAIN#${repositoryId}`, sk: "META" },
+        }),
+      );
+      return legacy.Item ? (stripKeys(legacy.Item) as unknown as BrainGraph) : undefined;
+    }
+    return undefined;
   }
 
   async saveEvents(events: AuditEvent[]): Promise<void> {

@@ -1,307 +1,296 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ApiError,
   api,
-  type AuditEvent,
-  type BrainMap,
-  type Finding,
+  flags,
+  mockLocalUser,
+  mockMeResponse,
   type Grant,
-  type RemediationTask,
+  type HealthStatus,
+  type MeResponse,
+  type UatuUser,
 } from "./api";
-import { BrainMapView } from "./BrainMapView";
+import { BrainMapPreview } from "./BrainMapPreview";
+import { Dashboard } from "./Dashboard";
+import { DocsPage } from "./DocsPage";
+import { Landing } from "./Landing";
+import { Onboarding } from "./Onboarding";
+import { OnboardingComplete } from "./OnboardingComplete";
+import { currentPath, isDocsPath, isOnboardingCompletePath, navigate, resumePendingInstallIfNeeded } from "./path";
 
-const FLOW = [
-  "Authorize fixture",
-  "Start remediation",
-  "Inspect findings",
-  "Run investigate → patch → verify",
-  "Review PR / contribute",
-] as const;
+type Gate = "loading" | "landing" | "onboarding" | "dashboard";
 
-function flowIndex(task?: RemediationTask, grant?: Grant | null): number {
-  if (!grant) return 0;
-  if (!task) return 1;
-  if (task.state === "TRIAGED" || task.state === "DISCOVERED") return 2;
-  if (task.state === "PR_ARTIFACT_READY" || task.state === "PR_CREATED" || task.prArtifact) return 4;
-  if (["SELECTED", "MEMORY_CONTEXT_LOADED", "INVESTIGATING", "ROOT_CAUSE_VERIFIED", "IMPLEMENTING", "TESTING", "MEMORY_UPDATED", "REVIEWING", "READY_FOR_PR"].includes(task.state)) {
-    return 3;
+function wantsBrainPreview(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get("brainPreview") === "1";
+  } catch {
+    return false;
   }
-  return 2;
+}
+
+function wantsSignedIn(): boolean {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    return q.get("signedIn") === "1" || q.get("demo") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function clearSignedInParam() {
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("signedIn") || url.searchParams.has("demo")) {
+      url.searchParams.delete("signedIn");
+      url.searchParams.delete("demo");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function App() {
+  const [path, setPath] = useState(currentPath);
+  const [gate, setGate] = useState<Gate>("loading");
+  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [user, setUser] = useState<UatuUser | null>(null);
   const [grant, setGrant] = useState<Grant | null>(null);
-  const [task, setTask] = useState<RemediationTask | null>(null);
-  const [audit, setAudit] = useState<AuditEvent[]>([]);
-  const [brain, setBrain] = useState<BrainMap>({ nodes: [], edges: [], activatedIds: [] });
-  const [selectedFindingId, setSelectedFindingId] = useState<string | undefined>();
+  const [mockSession, setMockSession] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [bootError, setBootError] = useState<string | null>(null);
 
-  const step = flowIndex(task ?? undefined, grant);
-  const selected: Finding | undefined = useMemo(
-    () => task?.findings.find((f) => f.id === (selectedFindingId ?? task.selectedFindingId)),
-    [task, selectedFindingId],
-  );
+  useEffect(() => {
+    const onPop = () => setPath(currentPath());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
-  async function authorize() {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function boot() {
+      setBusy(true);
+      setBootError(null);
+
+      let healthSnap: HealthStatus | null = null;
+      try {
+        healthSnap = await api.health();
+        if (!cancelled) {
+          setHealth(healthSnap);
+          setHealthError(null);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setHealthError(e instanceof Error ? e.message : String(e));
+        }
+      }
+
+      const forceDemo = flags.mockAuth || wantsSignedIn();
+      if (flags.mockAuth && !cancelled) setMockSession(true);
+
+      const onCompleteRoute = isOnboardingCompletePath();
+
+      try {
+        const meSnap = await api.me();
+        if (cancelled) return;
+        setMe(meSnap);
+        setUser(meSnap.user);
+
+        let existingGrant: Grant | null = null;
+        try {
+          const { grants } = await api.listGrants();
+          existingGrant = grants[0] ?? null;
+          setGrant(existingGrant);
+        } catch {
+          /* grants optional at boot */
+        }
+
+        if (onCompleteRoute) {
+          clearSignedInParam();
+          setGate("onboarding");
+          return;
+        }
+
+        if (wantsSignedIn() && resumePendingInstallIfNeeded()) {
+          clearSignedInParam();
+          setGate("onboarding");
+          return;
+        }
+
+        if (forceDemo || meSnap.user.id !== "local-demo" || healthSnap?.authRequired) {
+          clearSignedInParam();
+          setGate(existingGrant ? "dashboard" : "onboarding");
+        } else if (!healthSnap?.authRequired && !forceDemo) {
+          setGate("landing");
+        } else {
+          setGate("landing");
+        }
+      } catch (e) {
+        if (cancelled) return;
+        if (onCompleteRoute) {
+          // Stay on complete route; OnboardingComplete handles need_auth
+          setGate("landing");
+          if (forceDemo || flags.mockAuth) enterMock();
+          return;
+        }
+        if (e instanceof ApiError && e.isUnauthorized) {
+          if (forceDemo || flags.mockAuth) {
+            enterMock();
+          } else {
+            setGate("landing");
+          }
+        } else if (forceDemo || flags.mockAuth) {
+          enterMock();
+          setBootError(e instanceof Error ? e.message : String(e));
+        } else {
+          setGate("landing");
+          setBootError(e instanceof Error ? e.message : String(e));
+        }
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    }
+
+    function enterMock() {
+      const u = mockLocalUser();
+      setMockSession(true);
+      setUser(u);
+      setMe(mockMeResponse({ user: u, githubAppConfigured: false }));
+      clearSignedInParam();
+      setGate("onboarding");
+    }
+
+    void boot();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function enterLocalDemo() {
+    const u = mockLocalUser();
+    setMockSession(true);
+    setUser(u);
+    setMe(
+      mockMeResponse({
+        user: u,
+        githubAppConfigured: health?.githubAppConfigured ?? false,
+      }),
+    );
+    setGate("onboarding");
+  }
+
+  async function handleLogout() {
     setBusy(true);
-    setError(null);
     try {
-      const { grant: g } = await api.createGrant("dashboard-operator");
-      setGrant(g);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (!mockSession) await api.logout();
+    } catch {
+      /* best effort */
     } finally {
+      setMockSession(false);
+      setUser(null);
+      setMe(null);
+      setGrant(null);
+      setGate("landing");
       setBusy(false);
+      navigate("/", { replace: true });
     }
   }
 
-  async function start() {
-    if (!grant) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const { task: t } = await api.startTask(grant.id);
-      const detail = await api.getTask(t.id);
-      setTask(detail.task);
-      setAudit(detail.audit);
-      setBrain(detail.brain);
-      // Advance once to triage so findings appear
-      const advanced = await fetch(`/api/tasks/${t.id}/advance`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-      const body = (await advanced.json()) as {
-        task: RemediationTask;
-        audit: AuditEvent[];
-        brain: BrainMap;
-        message?: string;
-      };
-      if (!advanced.ok) throw new Error(body.message ?? "advance failed");
-      setTask(body.task);
-      setAudit(body.audit);
-      setBrain(body.brain);
-      setSelectedFindingId(body.task.findings[0]?.id);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
+  function handleGrantReady(g: Grant) {
+    setGrant(g);
+    setGate("dashboard");
+    navigate("/", { replace: true });
   }
 
-  async function runSelected() {
-    if (!task) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await api.runTask(task.id, selectedFindingId);
-      setTask(result.task);
-      setAudit(result.audit);
-      setBrain(result.brain);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
+  if (wantsBrainPreview()) {
+    return <BrainMapPreview />;
+  }
+
+  if (isDocsPath(path)) {
+    return (
+      <DocsPage
+        onBack={() => {
+          if (user && grant) {
+            setGate("dashboard");
+            navigate("/", { replace: true });
+          } else if (user) {
+            setGate("onboarding");
+            navigate("/onboarding", { replace: true });
+          } else {
+            setGate("landing");
+            navigate("/", { replace: true });
+          }
+        }}
+      />
+    );
+  }
+
+  if (gate === "loading") {
+    return (
+      <div className="boot-screen" role="status" aria-live="polite">
+        <div className="brand-mark">UATU</div>
+        <p className="brand-tag">Loading operator surface…</p>
+        {bootError ? <p className="landing-health-warn">{bootError}</p> : null}
+      </div>
+    );
+  }
+
+  // Path takes precedence for GitHub App Setup URL returns
+  if (isOnboardingCompletePath(path)) {
+    return (
+      <OnboardingComplete
+        me={me}
+        authLoading={busy && !me}
+        oauthConfigured={health?.oauthConfigured ?? false}
+        onGrantReady={handleGrantReady}
+        onGoDashboard={() => setGate("dashboard")}
+        onLogout={handleLogout}
+        onEnterLocalDemo={enterLocalDemo}
+      />
+    );
+  }
+
+  if (gate === "landing" || !user || !me) {
+    return (
+      <Landing
+        oauthConfigured={health?.oauthConfigured ?? false}
+        authRequired={health?.authRequired ?? false}
+        healthError={healthError}
+        busy={busy}
+        onLocalDemo={enterLocalDemo}
+        onMockSignIn={enterLocalDemo}
+      />
+    );
+  }
+
+  if (gate === "onboarding") {
+    return (
+      <Onboarding
+        me={me}
+        onGrantReady={handleGrantReady}
+        onSkipToDashboard={() => {
+          setGate("dashboard");
+          navigate("/", { replace: true });
+        }}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark">UATU</div>
-          <div className="brand-tag">Observe · Understand · Repair · Contribute</div>
-        </div>
-        <div className="mode-chip">
-          <span className="live-dot" aria-hidden />
-          {grant ? "AUTHORIZED · FIXTURE" : "PASSIVE · AWAITING GRANT"}
-        </div>
-      </header>
-
-      {error ? <div className="error-banner" role="alert">{error}</div> : null}
-
-      <div className="workspace">
-        <aside className="panel" aria-label="Workflow">
-          <p className="panel-title">Workflow</p>
-          <ol className="flow-list">
-            {FLOW.map((label, i) => (
-              <li
-                key={label}
-                className={`flow-step ${i === step ? "active" : ""} ${i < step ? "done" : ""}`}
-              >
-                <span className="flow-index">{String(i + 1).padStart(2, "0")}</span>
-                <span>{label}</span>
-              </li>
-            ))}
-          </ol>
-
-          <div className="actions">
-            <button className="btn btn-primary" type="button" disabled={busy || !!grant} onClick={authorize}>
-              Authorize fixture
-            </button>
-            <button className="btn" type="button" disabled={busy || !grant || !!task} onClick={start}>
-              Start run
-            </button>
-            <button
-              className="btn"
-              type="button"
-              disabled={busy || !task || task.state === "PR_ARTIFACT_READY" || task.state === "PR_CREATED"}
-              onClick={runSelected}
-            >
-              Run to PR
-            </button>
-          </div>
-
-          <div className="status-block">
-            <div>
-              Grant: <strong>{grant?.id.slice(0, 8) ?? "—"}</strong>
-            </div>
-            <div>
-              Task: <strong>{task?.id.slice(0, 8) ?? "—"}</strong>
-            </div>
-            <div>
-              State: <strong>{task?.state ?? "PASSIVE"}</strong>
-            </div>
-          </div>
-        </aside>
-
-        <main className="panel center-stack" aria-label="Investigation">
-          <section>
-            <div className="section-head">
-              <h2>Findings</h2>
-              <span className="brand-tag">{task?.findings.length ?? 0} candidates</span>
-            </div>
-            {!task?.findings.length ? (
-              <div className="empty">Authorize and start a run to surface fixture findings.</div>
-            ) : (
-              <div className="finding-list">
-                {task.findings.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className={`finding ${selectedFindingId === f.id ? "selected" : ""}`}
-                    onClick={() => setSelectedFindingId(f.id)}
-                  >
-                    <div className="finding-kind">
-                      {f.kind.replace("_", " ")} · {f.severity} · conf {(f.confidence.value * 100).toFixed(0)}%
-                    </div>
-                    <div className="finding-title">{f.title}</div>
-                    <div className="finding-meta">{f.summary}</div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section>
-            <div className="section-head">
-              <h2>Neural repository map</h2>
-              <span className="brand-tag">{brain.nodes.length} neurons</span>
-            </div>
-            <BrainMapView brain={brain} />
-          </section>
-
-          <section>
-            <div className="section-head">
-              <h2>Audit trail</h2>
-            </div>
-            {!audit.length ? (
-              <div className="empty">Events appear as the supervisor transitions state.</div>
-            ) : (
-              <ul className="audit-stream">
-                {[...audit].reverse().map((e) => (
-                  <li key={e.id} className="audit-item">
-                    <div className="audit-time">{new Date(e.at).toLocaleTimeString()}</div>
-                    <div>
-                      <div className="audit-action">
-                        {e.actor} · {e.action}
-                        {e.fromState && e.toState ? ` · ${e.fromState} → ${e.toState}` : ""}
-                      </div>
-                      <div>{e.detail}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </main>
-
-        <aside className="panel" aria-label="Evidence and artifact">
-          <p className="panel-title">Evidence · Verify · PR</p>
-
-          <div className="evidence-list" style={{ marginBottom: "1rem" }}>
-            <h3>Evidence</h3>
-            {!selected?.evidence.length ? (
-              <p className="empty" style={{ border: "none", padding: 0 }}>
-                Select a finding to inspect evidence.
-              </p>
-            ) : (
-              selected.evidence.map((ev) => (
-                <div key={ev.id} className="evidence-item">
-                  <div className="finding-kind">{ev.kind}{ev.path ? ` · ${ev.path}` : ""}</div>
-                  <div>{ev.summary}</div>
-                  {ev.excerpt ? (
-                    <pre style={{ margin: "0.35rem 0 0", fontSize: "0.75rem", color: "var(--mute)" }}>
-                      {ev.excerpt}
-                    </pre>
-                  ) : null}
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="verify-box" style={{ marginBottom: "1rem" }}>
-            <h3>Verification</h3>
-            {!task?.verification ? (
-              <p className="empty" style={{ border: "none", padding: 0 }}>
-                Pending patch verification.
-              </p>
-            ) : (
-              <>
-                <p className={task.verification.passed ? "pass" : "fail"}>
-                  {task.verification.passed ? "PASSED" : "FAILED"}
-                </p>
-                <ul>
-                  {task.verification.checks.map((c) => (
-                    <li key={c.name} className={c.passed ? "pass" : "fail"}>
-                      {c.name}: {c.passed ? "PASS" : "FAIL"}
-                    </li>
-                  ))}
-                </ul>
-                {task.patch ? (
-                  <p className="finding-meta">
-                    Branch <code>{task.patch.branchName}</code>
-                    <br />
-                    {task.patch.diffSummary}
-                  </p>
-                ) : null}
-              </>
-            )}
-          </div>
-
-          <div className="pr-box">
-            <h3>Contribution</h3>
-            {!task?.prArtifact ? (
-              <p className="empty" style={{ border: "none", padding: 0 }}>
-                PR draft appears after verification. Set UATU_GITHUB_TOKEN + UATU_GITHUB_REPO for a live GitHub PR.
-              </p>
-            ) : (
-              <>
-                <p className="finding-title">{task.prArtifact.title}</p>
-                <p className="finding-meta">
-                  Branch <code>{task.prArtifact.branchName}</code>
-                  {task.prArtifact.localOnly === false ? " · live PR opened" : " · local artifact"}
-                </p>
-                {task.prArtifact.prUrl ? (
-                  <p className="finding-meta">
-                    <a href={task.prArtifact.prUrl} target="_blank" rel="noreferrer">
-                      {task.prArtifact.prUrl}
-                    </a>
-                  </p>
-                ) : null}
-                <pre>{task.prArtifact.body}</pre>
-              </>
-            )}
-          </div>
-        </aside>
-      </div>
-    </div>
+    <Dashboard
+      user={user}
+      grant={grant}
+      health={health}
+      onGrantChange={setGrant}
+      onReonboard={() => {
+        setGate("onboarding");
+        navigate("/onboarding", { replace: true });
+      }}
+      onLogout={handleLogout}
+    />
   );
 }

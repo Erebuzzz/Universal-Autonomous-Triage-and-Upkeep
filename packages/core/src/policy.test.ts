@@ -56,6 +56,25 @@ describe("AuthorizationPolicy", () => {
       PolicyDeniedError,
     );
   });
+
+  it("allows temporary authorized roots", () => {
+    const extra = path.join(os.tmpdir(), "uatu-oss-clone-root");
+    const p = new AuthorizationPolicy(fixture);
+    p.grantTemporaryRoot(extra);
+    p.assertTargetIsFixture(extra);
+    p.clearTemporaryRoots();
+    assert.throws(() => p.assertTargetIsFixture(extra), PolicyDeniedError);
+  });
+
+  it("requires security-research scope for SECURITY path", () => {
+    assert.throws(
+      () => policy.assertSecurityResearchAllowed(grant({ scope: "general" })),
+      PolicyDeniedError,
+    );
+    policy.assertSecurityResearchAllowed(
+      grant({ scope: "security-research", capabilities: [...grant().capabilities, "security_research"] }),
+    );
+  });
 });
 
 describe("redactSecrets", () => {

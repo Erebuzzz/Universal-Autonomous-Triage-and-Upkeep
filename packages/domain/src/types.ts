@@ -17,7 +17,11 @@ export type Capability =
   | "write_files"
   | "create_branch"
   | "commit"
-  | "draft_pr";
+  | "draft_pr"
+  | "security_research";
+
+/** Grant operating scope — security scans require an explicit security-research grant. */
+export type GrantScope = "general" | "security-research";
 
 export type TaskState =
   | "DISCOVERED"
@@ -75,6 +79,7 @@ export type MemoryStatus =
   | "VERIFIED";
 
 export type NeuronKind =
+  | "Organization"
   | "Repository"
   | "File"
   | "Directory"
@@ -98,7 +103,8 @@ export type EdgeKind =
   | "TESTED_BY"
   | "LOCATED_IN"
   | "CAUSED_BY"
-  | "DERIVED_FROM";
+  | "DERIVED_FROM"
+  | "CONTRADICTS";
 
 export interface Confidence {
   value: number;
@@ -125,6 +131,39 @@ export interface AuthorizationGrant {
   grantedBy: string;
   grantedAt: string;
   notes?: string;
+  userId?: string;
+  installationId?: number;
+  repositoryFullName?: string;
+  source?: "fixture" | "github";
+  /** Defaults to general. Security-research required for SECURITY mode / CVE research path. */
+  scope?: GrantScope;
+  organizationId?: string;
+}
+
+/** Dashboard identity (GitHub OAuth or local demo). */
+export interface UatuUser {
+  id: string;
+  login: string;
+  avatarUrl?: string;
+  createdAt: string;
+  installationIds: number[];
+}
+
+export interface SessionRecord {
+  id: string;
+  userId: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface UsageQuotaSnapshot {
+  userId: string;
+  concurrentRuns: number;
+  dailyRuns: number;
+  monthlyRuns: number;
+  dayKey: string;
+  monthKey: string;
+  updatedAt: string;
 }
 
 export interface Neuron {
@@ -156,6 +195,10 @@ export interface BrainGraph {
   neurons: Neuron[];
   synapses: Synapse[];
   updatedAt: string;
+  /** Tenant partition — required for multi-user isolation. */
+  userId?: string;
+  /** Org-wide graph root when spanning multiple repositories. */
+  organizationId?: string;
 }
 
 export interface AuditEvent {
@@ -173,6 +216,13 @@ export interface AuditEvent {
 
 export type FindingKind = "functional_bug" | "dependency_security";
 
+export interface RemediationHint {
+  packageName: string;
+  installedVersion: string;
+  fixedVersion: string;
+  advisoryId: string;
+}
+
 export interface Finding {
   id: string;
   kind: FindingKind;
@@ -183,6 +233,10 @@ export interface Finding {
   evidence: Evidence[];
   relatedNeuronIds: string[];
   pathHints: string[];
+  /** Present for general-path dependency findings (npm audit). */
+  remediationHint?: RemediationHint;
+  /** Optional unified diff for LLM functional findings. */
+  proposedDiff?: string;
 }
 
 export interface PatchPlan {
@@ -243,6 +297,13 @@ export interface RemediationTask {
   prArtifact?: PrReadyArtifact;
   createdAt: string;
   updatedAt: string;
+  /** Multi-tenant: owning dashboard user (GitHub user id or local-demo). */
+  userId?: string;
+  /** GitHub App installation id when running against a live repo. */
+  installationId?: number;
+  /** owner/name when source is github. */
+  repositoryFullName?: string;
+  source?: "fixture" | "github";
 }
 
 export interface BrainMapNode {

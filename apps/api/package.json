@@ -6,12 +6,13 @@
   "main": "./dist/server.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx src/server.ts",
+    "dev:watch": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "demo": "tsx src/demo.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test src/workflow.test.ts"
+    "test": "node --import tsx --test src/workflow.test.ts src/security.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.758.0",

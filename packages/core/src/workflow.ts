@@ -16,12 +16,27 @@ import {
 import { AuditTrail, transitionAudit } from "./audit.js";
 import { RepositoryBrain, makeNeuron } from "./brain.js";
 import { runCommand } from "./command-runner.js";
-import { decideWithOptionalLlm, ruleTriagePriority } from "./llm.js";
+import {
+  applyDependencyRemediation,
+  applyFunctionalDiff,
+  DiffApplyError,
+  generalDepBranchName,
+  generalDetect,
+  readDetectionMode,
+  readTestScript,
+  withDetectionFallback,
+  type DetectionModeUsed,
+} from "./detection/index.js";
+import { decideWithOptionalLlm, planNextAction, ruleTriagePriority } from "./llm.js";
 import {
   createPullRequest,
+  gitAuthExtraHeaderArgs,
   isGitHubLiveEnabled,
   listOpenIssues,
+  parseGitHubRepo,
+  remoteHttpsUrlForRepo,
   remoteUrlForConfiguredRepo,
+  resolveGitHubToken,
 } from "./github.js";
 import type { ArtifactStore, AuditStore, BrainStore, GrantStore, TaskStore } from "./persistence.js";
 import { AuthorizationPolicy, PolicyDeniedError } from "./policy.js";
@@ -40,38 +55,70 @@ const VULN_VERSION = "1.0.1";
 const SAFE_VERSION = "1.0.2";
 
 export class WorkflowOrchestrator {
-  private readonly brain: RepositoryBrain;
   private readonly repositoryId: string;
+  private lastDetectionModeUsed: DetectionModeUsed = "fixture";
 
   constructor(private readonly deps: OrchestratorDeps) {
     this.repositoryId = deps.repositoryId ?? "demo-vulnerable";
-    this.brain = new RepositoryBrain(deps.store, this.repositoryId);
+  }
+
+  /** Tenant-scoped org brain (Organization root + shared Dependency neurons). */
+  private brainFor(task?: RemediationTask, grant?: AuthorizationGrant): RepositoryBrain {
+    const userId = task?.userId ?? grant?.userId;
+    const organizationId =
+      grant?.organizationId ??
+      (task?.repositoryFullName ? task.repositoryFullName.split("/")[0] : undefined) ??
+      userId ??
+      "local";
+    const repoId =
+      task?.repositoryFullName?.replace(/\//g, "__") ??
+      grant?.repositoryFullName?.replace(/\//g, "__") ??
+      this.repositoryId;
+    return new RepositoryBrain(this.deps.store, repoId, { userId, organizationId });
   }
 
   async createGrant(input: {
     grantedBy: string;
     notes?: string;
     capabilities?: AuthorizationGrant["capabilities"];
+    userId?: string;
+    installationId?: number;
+    repositoryFullName?: string;
+    source?: "fixture" | "github";
+    targetPath?: string;
+    repositoryName?: string;
+    scope?: AuthorizationGrant["scope"];
+    organizationId?: string;
   }): Promise<AuthorizationGrant> {
+    const targetPath = path.resolve(input.targetPath ?? this.deps.fixturePath);
+    if (input.targetPath) {
+      this.deps.policy.grantTemporaryRoot(targetPath);
+    }
+    const scope = input.scope ?? "general";
+    const capabilities = input.capabilities ?? [
+      "inspect",
+      "analyze",
+      "run_tests",
+      "write_files",
+      "create_branch",
+      "commit",
+      "draft_pr",
+      ...(scope === "security-research" ? (["security_research"] as const) : []),
+    ];
     const grant: AuthorizationGrant = {
       id: randomUUID(),
-      targetPath: path.resolve(this.deps.fixturePath),
-      repositoryName: "demo-vulnerable",
-      capabilities: input.capabilities ?? [
-        "inspect",
-        "analyze",
-        "run_tests",
-        "write_files",
-        "create_branch",
-        "commit",
-        "draft_pr",
-      ],
+      targetPath,
+      repositoryName: input.repositoryName ?? input.repositoryFullName ?? "demo-vulnerable",
+      capabilities: [...capabilities],
       pathAllowlist: ["**"],
       commandAllowlist: [
         "node",
         "npm",
         "npm test",
         "npm run test",
+        "npm audit",
+        "npm install",
+        "npx",
         "git",
         "git status",
         "git checkout",
@@ -82,10 +129,20 @@ export class WorkflowOrchestrator {
         "git config",
         "git remote",
         "git push",
+        "git diff",
       ],
       grantedBy: input.grantedBy,
       grantedAt: new Date().toISOString(),
       notes: input.notes,
+      userId: input.userId,
+      installationId: input.installationId,
+      repositoryFullName: input.repositoryFullName,
+      source: input.source ?? "fixture",
+      scope,
+      organizationId:
+        input.organizationId ??
+        (input.repositoryFullName ? input.repositoryFullName.split("/")[0] : undefined) ??
+        input.userId,
     };
     this.deps.policy.assertTargetIsFixture(grant.targetPath);
     await this.deps.store.saveGrant(grant);
@@ -93,7 +150,13 @@ export class WorkflowOrchestrator {
       taskId: "system",
       actor: input.grantedBy,
       action: "authorization_granted",
-      detail: `Granted write capabilities on ${grant.repositoryName}`,
+      detail: `Granted ${scope} scope on ${grant.repositoryName}`,
+      metadata: {
+        userId: grant.userId,
+        installationId: grant.installationId,
+        source: grant.source,
+        scope: grant.scope,
+      },
     });
     await this.persistAudit();
     return grant;
@@ -103,7 +166,9 @@ export class WorkflowOrchestrator {
     const grant = await this.deps.store.getGrant(grantId);
     if (!grant) throw new PolicyDeniedError("Unknown grant");
     this.deps.policy.assertCapability({ mode, grant, fixtureRoot: this.deps.fixturePath }, "analyze");
-
+    if (mode === "SECURITY") {
+      this.deps.policy.assertSecurityResearchAllowed(grant);
+    }
     const now = new Date().toISOString();
     const task: RemediationTask = {
       id: randomUUID(),
@@ -115,13 +180,18 @@ export class WorkflowOrchestrator {
       findings: [],
       createdAt: now,
       updatedAt: now,
+      userId: grant.userId,
+      installationId: grant.installationId,
+      repositoryFullName: grant.repositoryFullName,
+      source: grant.source ?? "fixture",
     };
     await this.deps.store.saveTask(task);
     this.deps.audit.append({
       taskId: task.id,
       actor: "supervisor",
       action: "task_created",
-      detail: "Remediation task discovered against authorized fixture",
+      detail: "Remediation task discovered against authorized target",
+      metadata: { userId: task.userId, installationId: task.installationId, source: task.source },
     });
     await this.persistAudit();
     return task;
@@ -210,9 +280,16 @@ export class WorkflowOrchestrator {
     task: RemediationTask,
     grant?: AuthorizationGrant,
   ): Promise<RemediationTask> {
-    const graph = await this.brain.initializeFromTree(task.repositoryPath);
-    await this.ingestIssues(task.repositoryPath);
-    const findings = await this.detectFindings(task.repositoryPath, graph.neurons.map((n) => n.id));
+    const brain = this.brainFor(task, grant);
+    const graph = await brain.initializeFromTree(task.repositoryPath);
+    await this.ingestIssues(task.repositoryPath, brain);
+    let findings = await this.detectFindings(
+      task.repositoryPath,
+      graph.neurons.map((n) => n.id),
+      grant,
+      task.id,
+    );
+    findings = findings.map((f) => brain.elevateFindingFromSharedDeps(f, graph));
 
     const llm = await decideWithOptionalLlm(
       { purpose: "triage", prompt: "Prioritize findings" },
@@ -222,6 +299,13 @@ export class WorkflowOrchestrator {
         .reverse()
         .join(","),
     );
+    this.deps.audit.append({
+      taskId: task.id,
+      actor: "research",
+      action: "agent_decision",
+      detail: `triage provider=${llm.provider}; reasoning=${llm.reasoning ?? "n/a"}`,
+      metadata: { provider: llm.provider, purpose: "triage", reasoning: llm.reasoning },
+    });
 
     task.findings = findings.sort(
       (a, b) => ruleTriagePriority(b.kind) - ruleTriagePriority(a.kind),
@@ -231,13 +315,37 @@ export class WorkflowOrchestrator {
       taskId: task.id,
       actor: "research",
       action: "brain_initialized",
-      detail: `Neurons=${graph.neurons.length} synapses=${graph.synapses.length}`,
-      metadata: { grantId: grant?.id },
+      detail: `Neurons=${graph.neurons.length} synapses=${graph.synapses.length} org=${graph.organizationId ?? "n/a"}`,
+      metadata: {
+        grantId: grant?.id,
+        userId: task.userId,
+        organizationId: graph.organizationId,
+        sharedDeps: graph.neurons.filter((n) => n.kind === "Dependency").length,
+      },
+    });
+    const plan = await planNextAction({
+      state: "TRIAGED",
+      findingsCount: findings.length,
+      findingSummary: findings[0]?.summary,
+      findingKind: findings[0]?.kind,
+      availableActions: ["select_top_finding", "select_functional", "select_dependency", "needs_human"],
+    });
+    this.deps.audit.append({
+      taskId: task.id,
+      actor: "triage",
+      action: "agent_decision",
+      detail: `planNextAction=${plan.action}; provider=${plan.provider}; reasoning=${plan.reasoning}`,
+      metadata: {
+        provider: plan.provider,
+        purpose: "planNextAction",
+        action: plan.action,
+        reasoning: plan.reasoning,
+      },
     });
     return task;
   }
 
-  private async ingestIssues(repoPath: string): Promise<void> {
+  private async ingestIssues(repoPath: string, brain: RepositoryBrain): Promise<void> {
     const localIssuesPath = path.join(repoPath, "ISSUES.json");
     try {
       const raw = await readFile(localIssuesPath, "utf8");
@@ -261,7 +369,7 @@ export class WorkflowOrchestrator {
           { value: 0.8, rationale: "Imported from authorized fixture ISSUES.json" },
           0.7,
         );
-        await this.brain.upsertNeuron(neuron);
+        await brain.upsertNeuron(neuron);
       }
       this.deps.audit.append({
         taskId: "system",
@@ -290,7 +398,7 @@ export class WorkflowOrchestrator {
           { value: 0.75, rationale: "Imported from GitHub Issues API" },
           0.65,
         );
-        await this.brain.upsertNeuron(neuron);
+        await brain.upsertNeuron(neuron);
       }
       if (remoteIssues.length) {
         this.deps.audit.append({
@@ -312,11 +420,37 @@ export class WorkflowOrchestrator {
 
   private async selectFinding(task: RemediationTask, selectedFindingId?: string): Promise<RemediationTask> {
     const preferredFunctional = task.findings.find((f) => f.kind === "functional_bug")?.id;
-    const id =
-      selectedFindingId ??
-      task.selectedFindingId ??
-      preferredFunctional ??
-      task.findings[0]?.id;
+    const preferredDep = task.findings.find((f) => f.kind === "dependency_security")?.id;
+    let id = selectedFindingId ?? task.selectedFindingId;
+
+    if (!id) {
+      const plan = await planNextAction({
+        state: "TRIAGED",
+        findingsCount: task.findings.length,
+        findingSummary: task.findings[0]?.summary,
+        findingKind: task.findings[0]?.kind,
+        availableActions: ["select_top_finding", "select_functional", "select_dependency", "needs_human"],
+      });
+      this.deps.audit.append({
+        taskId: task.id,
+        actor: "triage",
+        action: "agent_decision",
+        detail: `select planNextAction=${plan.action}; provider=${plan.provider}; reasoning=${plan.reasoning}`,
+        metadata: {
+          provider: plan.provider,
+          purpose: "planNextAction",
+          action: plan.action,
+          reasoning: plan.reasoning,
+        },
+      });
+      if (plan.action === "needs_human") {
+        return this.transition(task, "NEEDS_HUMAN", "triage", plan.reasoning);
+      }
+      if (plan.action === "select_functional" && preferredFunctional) id = preferredFunctional;
+      else if (plan.action === "select_dependency" && preferredDep) id = preferredDep;
+      else id = preferredFunctional ?? preferredDep ?? task.findings[0]?.id;
+    }
+
     if (!id) {
       return this.transition(task, "NEEDS_HUMAN", "triage", "No findings available");
     }
@@ -325,12 +459,13 @@ export class WorkflowOrchestrator {
   }
 
   private async loadMemory(task: RemediationTask): Promise<RemediationTask> {
-    const graph = await this.brain.getGraph();
+    const brain = this.brainFor(task);
+    const graph = await brain.getGraph();
     const finding = task.findings.find((f) => f.id === task.selectedFindingId);
     if (!graph || !finding) {
       return this.transition(task, "MEMORY_CONFLICT", "memory", "Missing brain or finding");
     }
-    const related = this.brain.retrieveForFinding(finding, graph);
+    const related = brain.retrieveForFinding(finding, graph);
     this.deps.audit.append({
       taskId: task.id,
       actor: "memory",
@@ -351,7 +486,7 @@ export class WorkflowOrchestrator {
       { value: finding.confidence.value, rationale: "Rule-based investigation" },
       0.85,
     );
-    await this.brain.upsertNeuron(hypothesis);
+    await this.brainFor(task).upsertNeuron(hypothesis);
     this.deps.audit.append({
       taskId: task.id,
       actor: "investigate",
@@ -364,10 +499,40 @@ export class WorkflowOrchestrator {
   private async verifyRootCause(task: RemediationTask): Promise<RemediationTask> {
     const finding = task.findings.find((f) => f.id === task.selectedFindingId);
     if (!finding) return this.transition(task, "NEEDS_HUMAN", "investigate", "Finding missing");
-    if (finding.confidence.value < 0.6) {
-      return this.transition(task, "LOW_CONFIDENCE", "investigate", "Confidence below threshold");
+
+    const plan = await planNextAction({
+      state: "INVESTIGATING",
+      findingKind: finding.kind,
+      findingSummary: finding.summary,
+      findingsCount: task.findings.length,
+      availableActions: ["accept_root_cause", "low_confidence", "needs_human"],
+      extra: `confidence=${finding.confidence.value}`,
+    });
+    this.deps.audit.append({
+      taskId: task.id,
+      actor: "investigate",
+      action: "agent_decision",
+      detail: `planNextAction=${plan.action}; provider=${plan.provider}; reasoning=${plan.reasoning}`,
+      metadata: {
+        provider: plan.provider,
+        purpose: "planNextAction",
+        action: plan.action,
+        reasoning: plan.reasoning,
+      },
+    });
+
+    if (plan.action === "needs_human") {
+      return this.transition(task, "NEEDS_HUMAN", "investigate", plan.reasoning);
     }
-    return this.transition(task, "ROOT_CAUSE_VERIFIED", "investigate", "Root cause accepted by rules");
+    if (plan.action === "low_confidence" || finding.confidence.value < 0.6) {
+      return this.transition(task, "LOW_CONFIDENCE", "investigate", plan.reasoning || "Confidence below threshold");
+    }
+    return this.transition(
+      task,
+      "ROOT_CAUSE_VERIFIED",
+      "investigate",
+      `Root cause accepted (${plan.provider}): ${plan.reasoning}`,
+    );
   }
 
   private async implement(
@@ -389,8 +554,12 @@ export class WorkflowOrchestrator {
 
     task = await this.transition(task, "IMPLEMENTING", "implement", `Applying fix for ${finding.kind}`);
 
-    const branchName =
-      finding.kind === "functional_bug"
+    const useGeneralDep = finding.kind === "dependency_security" && !!finding.remediationHint;
+    const useGeneralFunctional = finding.kind === "functional_bug" && !!finding.proposedDiff;
+
+    const branchName = useGeneralDep
+      ? generalDepBranchName(finding, task.id)
+      : finding.kind === "functional_bug"
         ? `uatu/fix-range-inclusive-${task.id.slice(0, 8)}`
         : `uatu/bump-left-pad-${task.id.slice(0, 8)}`;
 
@@ -403,24 +572,61 @@ export class WorkflowOrchestrator {
 
     const changedFiles: string[] = [];
     if (finding.kind === "functional_bug") {
-      const target = path.join(task.repositoryPath, "src", "range.js");
-      let source = await readFile(target, "utf8");
-      // Fix off-by-one: inclusive end should use <= 
-      source = source.replace(
-        /for \(let i = start; i < end; i \+= 1\)/,
-        "for (let i = start; i <= end; i += 1)",
-      );
-      await writeFile(target, source, "utf8");
-      changedFiles.push("src/range.js");
-
-      const testPath = path.join(task.repositoryPath, "test", "range.test.js");
-      let testSrc = await readFile(testPath, "utf8");
-      if (!testSrc.includes("inclusive end")) {
-        testSrc += `\n// uatu regression\ntest("inclusive end is counted", () => {\n  assert.deepEqual(inclusiveRange(2, 4), [2, 3, 4]);\n});\n`;
-        await writeFile(testPath, testSrc, "utf8");
-        changedFiles.push("test/range.test.js");
+      let appliedGeneral = false;
+      if (useGeneralFunctional) {
+        try {
+          const files = await applyFunctionalDiff(task.repositoryPath, finding, {
+            policy: this.deps.policy,
+            grant,
+          });
+          for (const f of files) {
+            this.deps.policy.assertPathAllowed(grant, f);
+            changedFiles.push(f);
+          }
+          appliedGeneral = changedFiles.length > 0;
+        } catch (err) {
+          this.deps.audit.append({
+            taskId: task.id,
+            actor: "implement",
+            action: "general_diff_rejected",
+            detail:
+              err instanceof DiffApplyError || err instanceof Error
+                ? err.message
+                : String(err),
+          });
+        }
       }
+      if (!appliedGeneral) {
+        // Fixture functional path (unchanged)
+        const target = path.join(task.repositoryPath, "src", "range.js");
+        let source = await readFile(target, "utf8");
+        // Fix off-by-one: inclusive end should use <=
+        source = source.replace(
+          /for \(let i = start; i < end; i \+= 1\)/,
+          "for (let i = start; i <= end; i += 1)",
+        );
+        await writeFile(target, source, "utf8");
+        changedFiles.push("src/range.js");
+
+        const testPath = path.join(task.repositoryPath, "test", "range.test.js");
+        let testSrc = await readFile(testPath, "utf8");
+        if (!testSrc.includes("inclusive end")) {
+          testSrc += `\n// uatu regression\ntest("inclusive end is counted", () => {\n  assert.deepEqual(inclusiveRange(2, 4), [2, 3, 4]);\n});\n`;
+          await writeFile(testPath, testSrc, "utf8");
+          changedFiles.push("test/range.test.js");
+        }
+      }
+    } else if (useGeneralDep) {
+      const files = await applyDependencyRemediation(task.repositoryPath, finding, {
+        policy: this.deps.policy,
+        grant,
+      });
+      for (const f of files) {
+        this.deps.policy.assertPathAllowed(grant, f);
+      }
+      changedFiles.push(...files);
     } else {
+      // Fixture dependency path (unchanged left-pad constants)
       const pkgPath = path.join(task.repositoryPath, "package.json");
       const pkg = JSON.parse(await readFile(pkgPath, "utf8")) as {
         dependencies: Record<string, string>;
@@ -453,7 +659,9 @@ export class WorkflowOrchestrator {
     const commitMessage =
       finding.kind === "functional_bug"
         ? "fix: make inclusiveRange include the end bound"
-        : `security: bump ${VULN_DEP} to ${SAFE_VERSION}`;
+        : useGeneralDep && finding.remediationHint
+          ? `security: bump ${finding.remediationHint.packageName} to ${finding.remediationHint.fixedVersion}`
+          : `security: bump ${VULN_DEP} to ${SAFE_VERSION}`;
 
     const commit = await runCommand("git", ["commit", "-m", commitMessage], {
       cwd: task.repositoryPath,
@@ -501,7 +709,7 @@ export class WorkflowOrchestrator {
       { value: 0.9, rationale: "Local commit created" },
       0.9,
     );
-    await this.brain.upsertNeuron(patchNeuron);
+    await this.brainFor(task, grant).upsertNeuron(patchNeuron);
 
     this.deps.audit.append({
       taskId: task.id,
@@ -528,21 +736,57 @@ export class WorkflowOrchestrator {
     task = await this.transition(task, "TESTING", "verify", "Running fixture verification");
 
     const finding = task.findings.find((f) => f.id === task.selectedFindingId);
-    const testResult = await runCommand("node", ["--test", "test/range.test.js"], {
+    const preferFixtureVerify =
+      this.lastDetectionModeUsed === "fixture" || readDetectionMode() === "fixture";
+    const testScript = preferFixtureVerify ? undefined : await readTestScript(task.repositoryPath);
+
+    const testResult = testScript
+      ? await runCommand("npm", ["run", "test"], {
+          cwd: task.repositoryPath,
+          policy: this.deps.policy,
+          grant,
+          timeoutMs: 90_000,
+        })
+      : await runCommand("node", ["--test", "test/range.test.js"], {
+          cwd: task.repositoryPath,
+          policy: this.deps.policy,
+          grant,
+          timeoutMs: 90_000,
+        });
+
+    const testCheckName = testScript ? "npm run test" : "node --test";
+
+    const diffNames = await runCommand("git", ["diff", "--name-only", "HEAD~1"], {
       cwd: task.repositoryPath,
       policy: this.deps.policy,
       grant,
-      timeoutMs: 90_000,
+      timeoutMs: 30_000,
     });
+    const gitChanged =
+      diffNames.exitCode === 0
+        ? diffNames.stdout
+            .split(/\r?\n/)
+            .map((l) => l.trim())
+            .filter(Boolean)
+        : [];
+    const scopeFiles =
+      gitChanged.length > 0 ? gitChanged : (task.patch?.changedFiles ?? []);
 
-    const scopeOk =
-      (task.patch?.changedFiles.length ?? 0) > 0 &&
-      (task.patch?.changedFiles.every((f) => !f.includes("..")) ?? false) &&
+    let scopeOk =
+      scopeFiles.length > 0 &&
+      scopeFiles.every((f) => !f.includes("..")) &&
       (task.patch?.applied ?? false);
+    try {
+      for (const f of scopeFiles) {
+        this.deps.policy.assertPathAllowed(grant, f);
+      }
+    } catch {
+      scopeOk = false;
+    }
 
     const checks = [
       {
-        name: "node --test",
+        name: testCheckName,
         passed: testResult.exitCode === 0 && !testResult.timedOut,
         output: (testResult.stdout + "\n" + testResult.stderr).slice(0, 4000),
         durationMs: 0,
@@ -550,7 +794,7 @@ export class WorkflowOrchestrator {
       {
         name: "diff_scope",
         passed: scopeOk,
-        output: task.patch?.changedFiles.join(", ") ?? "none",
+        output: scopeFiles.join(", ") || "none",
         durationMs: 0,
       },
     ];
@@ -573,7 +817,7 @@ export class WorkflowOrchestrator {
       verification.confidence,
       0.95,
     );
-    await this.brain.upsertNeuron(vNeuron);
+    await this.brainFor(task, grant).upsertNeuron(vNeuron);
 
     if (!verification.passed) {
       return this.transition(
@@ -596,7 +840,7 @@ export class WorkflowOrchestrator {
         { value: 0.94, rationale: "Verified remediation" },
         0.88,
       );
-      await this.brain.upsertNeuron(experience);
+      await this.brainFor(task, grant).upsertNeuron(experience);
     }
 
     return this.transition(task, "MEMORY_UPDATED", "memory", "Experience consolidated");
@@ -685,8 +929,10 @@ export class WorkflowOrchestrator {
       throw new PolicyDeniedError("Missing PR artifact or branch");
     }
 
-    const remote = remoteUrlForConfiguredRepo();
-    if (!remote) {
+    const ref =
+      (task.repositoryFullName ? parseGitHubRepo(task.repositoryFullName) : undefined) ??
+      parseGitHubRepo();
+    if (!ref) {
       return this.transition(
         task,
         "PR_ARTIFACT_READY",
@@ -695,6 +941,19 @@ export class WorkflowOrchestrator {
       );
     }
 
+    const token = await resolveGitHubToken({ installationId: task.installationId });
+    if (!token && !remoteUrlForConfiguredRepo()) {
+      return this.transition(
+        task,
+        "PR_ARTIFACT_READY",
+        "pr",
+        "GitHub live mode incomplete; kept local artifact",
+      );
+    }
+
+    // Prefer clean HTTPS remote + http.extraHeader (never put token in remote URL).
+    const remote = await remoteHttpsUrlForRepo(ref);
+    const authArgs = token ? gitAuthExtraHeaderArgs(token) : [];
     const remoteName = "uatu-origin";
     await runCommand("git", ["remote", "remove", remoteName], {
       cwd: task.repositoryPath,
@@ -708,12 +967,16 @@ export class WorkflowOrchestrator {
       grant,
       timeoutMs: 30_000,
     });
-    const push = await runCommand("git", ["push", "-u", remoteName, `HEAD:${task.patch.branchName}`], {
-      cwd: task.repositoryPath,
-      policy: this.deps.policy,
-      grant,
-      timeoutMs: 120_000,
-    });
+    const push = await runCommand(
+      "git",
+      [...authArgs, "push", "-u", remoteName, `HEAD:${task.patch.branchName}`],
+      {
+        cwd: task.repositoryPath,
+        policy: this.deps.policy,
+        grant,
+        timeoutMs: 120_000,
+      },
+    );
     if (push.exitCode !== 0) {
       this.deps.audit.append({
         taskId: task.id,
@@ -725,11 +988,19 @@ export class WorkflowOrchestrator {
     }
 
     try {
+      const securityLabel =
+        grant.scope === "security-research" ||
+        task.findings.find((f) => f.id === task.selectedFindingId)?.kind === "dependency_security";
+      const prBody = securityLabel
+        ? `${task.prArtifact.body}\n\n---\n**UATU label:** \`security-remediation\` (security-research grant path)\n`
+        : task.prArtifact.body;
       const pr = await createPullRequest({
-        title: task.prArtifact.title,
-        body: task.prArtifact.body,
+        title: securityLabel ? `[security] ${task.prArtifact.title}` : task.prArtifact.title,
+        body: prBody,
         head: task.patch.branchName,
         base: task.prArtifact.baseBranch,
+        repo: ref,
+        installationId: task.installationId,
       });
       task.prArtifact = {
         ...task.prArtifact,
@@ -751,7 +1022,7 @@ export class WorkflowOrchestrator {
         { value: 0.95, rationale: "Live GitHub PR opened" },
         0.9,
       );
-      await this.brain.upsertNeuron(prNeuron);
+      await this.brainFor(task, grant).upsertNeuron(prNeuron);
 
       return this.transition(task, "PR_CREATED", "pr", `Opened GitHub PR #${pr.number}`);
     } catch (err) {
@@ -771,6 +1042,52 @@ export class WorkflowOrchestrator {
   }
 
   private async detectFindings(
+    repoPath: string,
+    neuronIds: string[],
+    grant?: AuthorizationGrant,
+    taskId?: string,
+  ): Promise<Finding[]> {
+    const { result, modeUsed } = await withDetectionFallback(
+      async () =>
+        generalDetect({
+          repoPath,
+          policy: this.deps.policy,
+          grant,
+          neuronIds,
+        }),
+      async () => this.detectFindingsFixture(repoPath, neuronIds),
+      (findings) => findings.length === 0,
+      () => [],
+    );
+
+    let findings = result;
+    // When auto yields general audit hits but no LLM functional finding, merge the
+    // fixture functional detector so verify still has a camera-ready path.
+    if (
+      readDetectionMode() === "auto" &&
+      modeUsed === "general" &&
+      !findings.some((f) => f.kind === "functional_bug")
+    ) {
+      const fixtureFindings = await this.detectFindingsFixture(repoPath, neuronIds);
+      findings = [
+        ...findings,
+        ...fixtureFindings.filter((f) => f.kind === "functional_bug"),
+      ];
+    }
+
+    this.lastDetectionModeUsed = modeUsed;
+    this.deps.audit.append({
+      taskId: taskId ?? "system",
+      actor: "research",
+      action: "detection_completed",
+      detail: `detection_mode_used=${modeUsed}; findings=${findings.length}`,
+      metadata: { detection_mode_used: modeUsed },
+    });
+    return findings;
+  }
+
+  /** Hardcoded fixture detectors — left unchanged for camera-ready demos. */
+  private async detectFindingsFixture(
     repoPath: string,
     neuronIds: string[],
   ): Promise<Finding[]> {
@@ -876,10 +1193,18 @@ export class WorkflowOrchestrator {
     await this.deps.store.saveEvents(this.deps.audit.all());
   }
 
-  async getBrainMap(activatedIds: string[] = []) {
-    const graph = await this.brain.getGraph();
+  async getBrainMap(activatedIds: string[] = [], opts?: { userId?: string; repositoryId?: string }) {
+    const brain = new RepositoryBrain(
+      this.deps.store,
+      opts?.repositoryId ?? this.repositoryId,
+      {
+        userId: opts?.userId,
+        organizationId: opts?.userId ?? "local",
+      },
+    );
+    const graph = await brain.getGraph();
     if (!graph) return { nodes: [], edges: [], activatedIds: [] };
-    return this.brain.toMapPayload(graph, activatedIds);
+    return brain.toMapPayload(graph, activatedIds);
   }
 }
 

@@ -15,9 +15,9 @@ This repository ships a **complete MVP vertical slice**: local-first execution w
 1. Explicit authorization before any write.
 2. Repository Brain (neurons + typed synapses + evidence/confidence).
 3. Bounded remediation state machine with immutable audit events.
-4. Two authorized fixture scenarios:
+4. Two authorized fixture scenarios (plus an audit-seeded dep for general mode):
    - Functional bug: `inclusiveRange` off-by-one in `fixtures/demo-vulnerable`.
-   - Dependency security: deliberately pinned outdated `left-pad@1.0.1`.
+   - Dependency security: deliberately pinned outdated `left-pad@1.0.1` (fixture detector) and `minimist@0.0.8` (real `npm audit` finding).
 5. Isolated command runner (allowlist, timeout, redaction).
 6. Local branch + commit + PR artifact; optional live GitHub PR when `UATU_GITHUB_TOKEN` and `UATU_GITHUB_REPO` are set.
 7. Operator dashboard for authorize → run → inspect → verify → contribute.
@@ -97,6 +97,19 @@ npm run build -w @uatu/domain -w @uatu/core
 ### Environment
 
 Copy `.env.example` values as needed. Bedrock stays off unless `UATU_BEDROCK_ENABLED=true`.
+
+Multi-tenant / GitHub App / Vercel+AWS split deploy: see [docs/MULTI_TENANT.md](docs/MULTI_TENANT.md).
+Live PR / App token setup (API host only): see [docs/GITHUB_APP.md](docs/GITHUB_APP.md).
+
+Detection mode (`UATU_DETECTION_MODE`, default `auto`):
+
+| Value | Behavior |
+|-------|----------|
+| `auto` | Try general detection (`npm audit` + optional LLM on failing tests); on timeout/error/empty findings, silently use the fixture detectors |
+| `fixture` | Hardcoded demo detectors only (`inclusiveRange` + `left-pad@1.0.1`) |
+| `general` | `npm audit` findings and optional Bedrock functional root-cause only (no fixture string match) |
+
+Audit events include `detection_mode_used` (`general` \| `fixture`); the dashboard shows it on `detection_completed` rows.
 
 Optional live GitHub contribution:
 

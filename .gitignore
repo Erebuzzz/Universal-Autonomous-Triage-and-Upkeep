@@ -28,3 +28,5 @@ agent-store-handoff*
 
 # Large agentic build prompt (local only; do not publish)
 UATU Agentic Build Prompt.md
+
+.vercel

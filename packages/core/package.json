@@ -15,9 +15,11 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test src/policy.test.ts src/github.test.ts"
+    "test": "node --import tsx --test src/policy.test.ts src/github.test.ts src/llm.test.ts src/brain.test.ts src/detection/merge-findings.test.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1136.0",
+    "@octokit/auth-app": "^7.2.2",
     "@uatu/domain": "*"
   },
   "devDependencies": {

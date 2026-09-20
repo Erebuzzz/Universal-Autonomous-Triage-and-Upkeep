@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { AuditEvent, AuthorizationGrant, BrainGraph, RemediationTask } from "@uatu/domain";
+import { brainStorageKey } from "./brain.js";
 
 export interface TaskStore {
   saveTask(task: RemediationTask): Promise<void>;
@@ -16,7 +17,7 @@ export interface GrantStore {
 
 export interface BrainStore {
   saveBrain(graph: BrainGraph): Promise<void>;
-  getBrain(repositoryId: string): Promise<BrainGraph | undefined>;
+  getBrain(repositoryId: string, userId?: string): Promise<BrainGraph | undefined>;
 }
 
 export interface AuditStore {
@@ -93,18 +94,30 @@ export class JsonFileStore implements TaskStore, GrantStore, BrainStore, AuditSt
 
   async saveBrain(graph: BrainGraph): Promise<void> {
     await this.ensure();
+    const key = brainStorageKey(graph.repositoryId, graph.userId);
     await writeFile(
-      path.join(this.root, "brains", `${graph.repositoryId}.json`),
+      path.join(this.root, "brains", `${key}.json`),
       JSON.stringify(graph, null, 2),
       "utf8",
     );
   }
 
-  async getBrain(repositoryId: string): Promise<BrainGraph | undefined> {
+  async getBrain(repositoryId: string, userId?: string): Promise<BrainGraph | undefined> {
+    const key = brainStorageKey(repositoryId, userId);
     try {
-      const raw = await readFile(path.join(this.root, "brains", `${repositoryId}.json`), "utf8");
+      const raw = await readFile(path.join(this.root, "brains", `${key}.json`), "utf8");
       return JSON.parse(raw) as BrainGraph;
     } catch {
+      // Backward-compat: unscoped fixture brains without tenant prefix.
+      if (userId) {
+        try {
+          const raw = await readFile(path.join(this.root, "brains", `${repositoryId}.json`), "utf8");
+          const graph = JSON.parse(raw) as BrainGraph;
+          if (!graph.userId || graph.userId === userId) return graph;
+        } catch {
+          /* miss */
+        }
+      }
       return undefined;
     }
   }
