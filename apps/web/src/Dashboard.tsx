@@ -118,12 +118,12 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
       const { task: t } = await api.startTask(grant.id, "REMEDIATE", selectedModel);
       const detail = await api.getTask(t.id);
       setTask(detail.task);
-      setAudit(detail.audit);
-      setBrain(detail.brain);
+      setAudit(detail.audit ?? []);
+      if (detail.brain && Array.isArray(detail.brain.nodes)) setBrain(detail.brain);
       const body = await api.advanceTask(t.id, undefined, selectedModel);
       setTask(body.task);
-      setAudit(body.audit);
-      setBrain(body.brain);
+      setAudit(body.audit ?? []);
+      if (body.brain && Array.isArray(body.brain.nodes)) setBrain(body.brain);
       setSelectedFindingId(body.task.findings[0]?.id);
     } catch (e) {
       captureError(e);
@@ -140,8 +140,8 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
     try {
       const result = await api.runTask(task.id, selectedFindingId, selectedModel);
       setTask(result.task);
-      setAudit(result.audit);
-      setBrain(result.brain);
+      setAudit(result.audit ?? []);
+      if (result.brain && Array.isArray(result.brain.nodes)) setBrain(result.brain);
     } catch (e) {
       captureError(e);
     } finally {
@@ -371,9 +371,9 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
           <section>
             <div className="section-head">
               <h2>Neural repository map</h2>
-              <span className="brand-tag">{brain.nodes.length} neurons · interactive</span>
+              <span className="brand-tag">{brain?.nodes?.length ?? 0} neurons · interactive</span>
             </div>
-            {brain.nodes.length ? (
+            {brain?.nodes?.length ? (
               <BrainMapView brain={brain} />
             ) : (
               <div className="empty">Brain map activates after triage begins.</div>

@@ -462,20 +462,24 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
   const [transform, setTransform] = useState<ViewTransform>({ x: 0, y: 0, k: 1 });
   const [entered, setEntered] = useState(reducedMotion);
 
-  const activated = useMemo(() => new Set(brain.activatedIds), [brain.activatedIds]);
+  const safeNodes = Array.isArray(brain?.nodes) ? brain.nodes : [];
+  const safeEdges = Array.isArray(brain?.edges) ? brain.edges : [];
+  const safeActivatedIds = Array.isArray(brain?.activatedIds) ? brain.activatedIds : [];
+
+  const activated = useMemo(() => new Set(safeActivatedIds), [safeActivatedIds]);
 
   const presentKinds = useMemo(() => {
-    const kinds = new Set(brain.nodes.map((n) => n.kind));
+    const kinds = new Set(safeNodes.map((n) => n.kind));
     return DEFAULT_KINDS.filter((k) => kinds.has(k));
-  }, [brain.nodes]);
+  }, [safeNodes]);
 
   const visible = useMemo(
-    () => pickVisible(brain.nodes, filterKinds),
-    [brain.nodes, filterKinds],
+    () => pickVisible(safeNodes, filterKinds),
+    [safeNodes, filterKinds],
   );
   const visibleIds = useMemo(() => new Set(visible.map((n) => n.id)), [visible]);
 
-  const layout = useMemo(() => layoutDendrogram(visible, brain.edges), [visible, brain.edges]);
+  const layout = useMemo(() => layoutDendrogram(visible, safeEdges), [visible, safeEdges]);
   const positions = layout.positions;
 
   const treeEdgeSet = useMemo(() => {
@@ -508,7 +512,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     setEntered(false);
     const t = window.setTimeout(() => setEntered(true), 40);
     return () => window.clearTimeout(t);
-  }, [brain.nodes.length, brain.edges.length, reducedMotion]);
+  }, [safeNodes.length, safeEdges.length, reducedMotion]);
 
   useEffect(() => {
     if (selectedId && !visibleIds.has(selectedId)) setSelectedId(null);
@@ -616,7 +620,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     });
   }, []);
 
-  const clampedShown = brain.nodes.length > visible.length;
+  const clampedShown = safeNodes.length > visible.length;
 
   // Tree links for hierarchy; secondary synapses only when focused/activated
   const treeLinks = layout.treeEdges.filter(
@@ -863,7 +867,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
 
       <div className="brain-map-footer">
         <span className="brain-map-meta">
-          {visible.length}/{brain.nodes.length} neurons · tree depth {layout.maxDepth}
+          {visible.length}/{safeNodes.length} neurons · tree depth {layout.maxDepth}
           {clampedShown ? " · capped" : ""}
         </span>
         {selectedNode ? (

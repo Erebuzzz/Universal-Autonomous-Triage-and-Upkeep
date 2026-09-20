@@ -119,6 +119,9 @@ export class UatuShipItStack extends cdk.Stack {
     if (process.env.UATU_GITHUB_APP_INSTALLATION_ID) {
       sharedEnv.UATU_GITHUB_APP_INSTALLATION_ID = process.env.UATU_GITHUB_APP_INSTALLATION_ID.trim();
     }
+    if (process.env.UATU_GITHUB_TOKEN) {
+      sharedEnv.UATU_GITHUB_TOKEN = process.env.UATU_GITHUB_TOKEN.trim();
+    }
 
     // Public lambci/git-lambda2 layer (Amazon Linux) so fixture + remediation git works in Lambda.
     const gitLayer = lambda.LayerVersion.fromLayerVersionArn(
