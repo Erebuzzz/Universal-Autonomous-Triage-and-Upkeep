@@ -31,6 +31,10 @@ describe("workflow integration", () => {
     pkg.dependencies["left-pad"] = "1.0.1";
     await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + "\n", "utf8");
 
+    // Force fixture detection so verification always uses the known fixture test
+    // runner path, avoiding auto-mode differences between local and CI.
+    process.env.UATU_DETECTION_MODE = "fixture";
+
     const git = (args: string[]) =>
       spawnSync("git", args, {
         cwd: fixture,
@@ -56,6 +60,7 @@ describe("workflow integration", () => {
   });
 
   after(async () => {
+    delete process.env.UATU_DETECTION_MODE;
     await rm(tmp, { recursive: true, force: true });
   });
 

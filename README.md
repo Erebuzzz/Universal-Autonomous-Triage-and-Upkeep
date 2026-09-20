@@ -66,7 +66,7 @@ flowchart TD
     SPA -->|HTTPS / Credentialed CORS| APIGW
     APIGW -->|Proxy Integration| ApiLambda
     ApiLambda -->|Enqueue Async Tasks| JobQueue
-    JobQueue -->|Event Source Mapping (Batch: 1)| WorkerLambda
+    JobQueue -->|"Event Source Mapping, Batch: 1"| WorkerLambda
     JobQueue -.->|Max Retries Exceeded| JobDLQ
     CronRule -->|Daily Trigger| JobQueue
     

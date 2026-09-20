@@ -396,6 +396,10 @@ export function createHttpApp(ctx: AppContext): express.Express {
       audit: audit.forTask(task.id),
       brain: await orchestrator.getBrainMap(
         task.findings.find((f) => f.id === task.selectedFindingId)?.relatedNeuronIds ?? [],
+        {
+          userId: task.userId,
+          repositoryId: task.repositoryFullName?.replace(/\//g, "__") ?? undefined,
+        },
       ),
     });
   });
@@ -438,7 +442,13 @@ export function createHttpApp(ctx: AppContext): express.Express {
       res.json({
         task,
         audit: audit.forTask(task.id),
-        brain: await orchestrator.getBrainMap(),
+        brain: await orchestrator.getBrainMap(
+          task.findings.find((f) => f.id === task.selectedFindingId)?.relatedNeuronIds ?? [],
+          {
+            userId: task.userId,
+            repositoryId: task.repositoryFullName?.replace(/\//g, "__") ?? undefined,
+          },
+        ),
       });
     } catch (err) {
       handleError(res, err);
@@ -524,6 +534,10 @@ export function createHttpApp(ctx: AppContext): express.Express {
           audit: audit.forTask(task.id),
           brain: await orchestrator.getBrainMap(
             task.findings.find((f) => f.id === task.selectedFindingId)?.relatedNeuronIds ?? [],
+            {
+              userId: task.userId,
+              repositoryId: task.repositoryFullName?.replace(/\//g, "__") ?? undefined,
+            },
           ),
         });
       } finally {
