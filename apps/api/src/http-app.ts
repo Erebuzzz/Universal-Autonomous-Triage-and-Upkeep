@@ -24,8 +24,9 @@ export async function buildAppContext(): Promise<AppContext> {
   const asyncJobs = Boolean(jobQueueUrl) && process.env.UATU_ASYNC_JOBS !== "false";
 
   if (tableName && bucketName) {
-    const { seedFixture, fixturePath } = resolvePaths();
-    await prepareSandboxFixture(seedFixture, fixturePath);
+    const { fixturePath } = resolvePaths();
+    // Do not seed the fixture on cold start /health. Git may be provided via a Lambda layer
+    // and is only required when an authorized write path runs.
     const store = new CloudUatuStore({
       tableName,
       bucketName,
@@ -56,10 +57,12 @@ export async function buildAppContext(): Promise<AppContext> {
 }
 
 export function createHttpApp(ctx: AppContext): express.Express {
-  const corsOrigin = process.env.UATU_CORS_ORIGIN ?? "http://localhost:5173";
+  const corsOrigin =
+    process.env.UATU_CORS_ORIGIN ??
+    (process.env.AWS_LAMBDA_FUNCTION_NAME ? "*" : "http://localhost:5173");
   const { store, audit, orchestrator, fixturePath, jobQueueUrl, asyncJobs } = ctx;
   const app = express();
-  app.use(cors({ origin: corsOrigin }));
+  app.use(cors({ origin: corsOrigin === "*" ? true : corsOrigin }));
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/health", (_req, res) => {

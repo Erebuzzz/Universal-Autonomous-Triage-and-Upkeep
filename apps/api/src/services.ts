@@ -77,12 +77,22 @@ async function initExclusiveGitRepo(fixturePath: string): Promise<void> {
       },
     });
 
+  const version = run(["--version"]);
+  if (version.status !== 0) {
+    throw new Error(
+      `git is not available in this runtime (${version.stderr || version.error?.message || "unknown"}). ` +
+        "Local installs need git on PATH; Lambda needs the git layer.",
+    );
+  }
+
   run(["init", "-b", "main"]);
   run(["config", "core.autocrlf", "false"]);
   run(["add", "."]);
   const commit = run(["commit", "-m", "chore: seed authorized demo fixture"]);
   if (commit.status !== 0) {
-    throw new Error(`Fixture git seed commit failed: ${commit.stderr || commit.stdout}`);
+    throw new Error(
+      `Fixture git seed commit failed: ${commit.stderr || commit.stdout || commit.error?.message || "unknown"}`,
+    );
   }
 
   const gitDir = run(["rev-parse", "--git-dir"]);

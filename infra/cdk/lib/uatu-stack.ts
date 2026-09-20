@@ -79,7 +79,18 @@ export class UatuShipItStack extends cdk.Stack {
       UATU_PASSIVE_MODE: "true",
       UATU_ASYNC_JOBS: "true",
       UATU_DATA_DIR: "/tmp/uatu-data",
+      // git-lambda2 layer installs binaries under /opt/bin
+      PATH: "/opt/bin:/usr/local/bin:/usr/bin:/bin",
+      GIT_TEMPLATE_DIR: "/opt/share/git-core/templates",
+      GIT_EXEC_PATH: "/opt/libexec/git-core",
     };
+
+    // Public lambci/git-lambda2 layer (Amazon Linux) so fixture + remediation git works in Lambda.
+    const gitLayer = lambda.LayerVersion.fromLayerVersionArn(
+      this,
+      "GitLambdaLayer",
+      `arn:aws:lambda:${this.region}:553035198032:layer:git-lambda2:8`,
+    );
 
     const bundling = {
       minify: true,
@@ -117,6 +128,7 @@ export class UatuShipItStack extends cdk.Stack {
       bundling,
       projectRoot: REPO_ROOT,
       depsLockFilePath: path.join(REPO_ROOT, "package-lock.json"),
+      layers: [gitLayer],
       logGroup: new logs.LogGroup(this, "ApiLogs", {
         retention: logs.RetentionDays.TWO_WEEKS,
         removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -133,6 +145,7 @@ export class UatuShipItStack extends cdk.Stack {
       bundling,
       projectRoot: REPO_ROOT,
       depsLockFilePath: path.join(REPO_ROOT, "package-lock.json"),
+      layers: [gitLayer],
       logGroup: new logs.LogGroup(this, "WorkerLogs", {
         retention: logs.RetentionDays.TWO_WEEKS,
         removalPolicy: cdk.RemovalPolicy.DESTROY,
