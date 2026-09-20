@@ -1,265 +1,368 @@
-# UATU
-
-**Universal Autonomous Triage & Upkeep**
+# UATU: Universal Autonomous Triage & Upkeep
 
 **Observe. Understand. Repair. Contribute.**
 
-UATU is an autonomous open-source engineering and security research agent that analyzes an *authorized* repository, builds a persistent repository Brain, investigates bugs and dependency risks, applies minimal verified fixes, and contributes reviewable GitHub pull requests (or local PR artifacts when GitHub credentials are unset).
+UATU is an autonomous open-source maintenance and security research agent. It continuously monitors authorized software repositories, maintains a living repository Brain of codebase knowledge, triages bugs and security advisories, formulates minimal verified patches inside isolated sandboxes, and opens reviewable GitHub pull requests.
 
-This repository ships a **complete MVP vertical slice**: local-first execution with deterministic rule-based decisions (Amazon Bedrock optional), optional live GitHub PR open, GitHub webhook ingestion for PR events, plus an AWS CDK (TypeScript) path for API, worker, storage, and dashboard hosting.
-
----
-
-## What this MVP proves
-
-1. Explicit authorization before any write.
-2. Repository Brain (neurons + typed synapses + evidence/confidence).
-3. Bounded remediation state machine with immutable audit events.
-4. Two authorized fixture scenarios (plus an audit-seeded dep for general mode):
-   - Functional bug: `inclusiveRange` off-by-one in `fixtures/demo-vulnerable`.
-   - Dependency security: deliberately pinned outdated `left-pad@1.0.1` (fixture detector) and `minimist@0.0.8` (real `npm audit` finding).
-5. Isolated command runner (allowlist, timeout, redaction).
-6. Local branch + commit + PR artifact; optional live GitHub PR when `UATU_GITHUB_TOKEN` and `UATU_GITHUB_REPO` are set.
-7. Operator dashboard for authorize → run → inspect → verify → contribute.
-8. Cost-conscious AWS CDK stack (OpenSearch / Step Functions / multi-repo Brain deferred as stretch).
-9. Fixture issue import (`ISSUES.json`) and optional GitHub Issues API import into the Brain.
-10. GitHub webhook endpoint (`POST /api/webhooks/github`) to record PR lifecycle observations.
+The system is deployed using a split cloud architecture: a high-performance React SPA frontend on Vercel and a least-privilege, serverless backend on AWS in the `ap-south-1` region powered by Amazon Bedrock Nova Micro, API Gateway HTTP API, Lambda with a native Git layer, SQS, DynamoDB, and S3.
 
 ---
 
-## Architecture
+## 1. System Architecture and Design
+
+### Split Cloud Deployment Architecture
 
 ```mermaid
-flowchart LR
-    User[Operator] --> WebUI[UATUDashboard]
-    WebUI --> Api[APIService]
-    Api --> Policy[AuthorizationPolicy]
-    Policy --> Orchestrator[WorkflowOrchestrator]
-    Orchestrator --> Research[ResearchAndTriage]
-    Orchestrator --> Investigate[InvestigationAgent]
-    Orchestrator --> Implement[ImplementationAgent]
-    Orchestrator --> Verify[VerificationAgent]
-    Research --> Brain[RepositoryBrain]
-    Investigate --> Brain
-    Implement --> Fixture[AuthorizedFixtureRepo]
-    Verify --> Fixture
-    Verify --> Brain
-    Brain --> Audit[AuditTrail]
-    Orchestrator --> PrAgent[PRAgent]
-    PrAgent --> GitHub[OptionalGitHubPR]
-    Api --> Webhook[GitHubWebhook]
-    Webhook --> Brain
-    Api --> Jobs[SQSJobs]
-    Jobs --> Worker[LambdaWorker]
-    Worker --> Store[DynamoDBAndS3]
+flowchart TD
+    subgraph BrowserClient["Browser Client / Operator"]
+        User["Developer / Repo Maintainer"]
+        SPA["Vite React SPA (uatu-beta.vercel.app)"]
+        User -->|Interacts with| SPA
+    end
+
+    subgraph VercelEdge["Vercel Edge Network"]
+        VStatic["Static Assets & Routing (Vercel CDN)"]
+        SPA -.->|Hosted on| VStatic
+    end
+
+    subgraph GitHubPlatform["GitHub Platform"]
+        GHApp["GitHub App (uatu-agent)"]
+        GHOAuth["GitHub OAuth Provider"]
+        GHRepos["Target Repositories"]
+        GHWebhooks["Webhook Dispatcher"]
+    end
+
+    subgraph AWSCloud["AWS Cloud (Region: ap-south-1)"]
+        APIGW["API Gateway HTTP API (uatu-api)"]
+        
+        subgraph ServerlessCompute["Serverless Compute Layer"]
+            ApiLambda["API Lambda (Express + Git Layer)"]
+            WorkerLambda["Worker Lambda (Orchestrator + Bedrock + Git)"]
+        end
+
+        subgraph Messaging["Asynchronous Event & Job Queue"]
+            JobQueue["Amazon SQS Job Queue (JobQueue)"]
+            JobDLQ["Dead Letter Queue (JobDlq)"]
+            EventBus["Amazon EventBridge Bus (uatu-shipit)"]
+            CronRule["Daily Rescan Cron Rule"]
+        end
+
+        subgraph StoragePersistence["Storage & Data Persistence"]
+            DynamoDB["Amazon DynamoDB (Tasks & Sessions)"]
+            S3Artifacts["Amazon S3 Bucket (Artifacts & Diffs)"]
+        end
+
+        subgraph AIReasoning["AI Inference Layer"]
+            Bedrock["Amazon Bedrock (Nova Micro: apac.amazon.nova-micro-v1:0)"]
+        end
+    end
+
+    SPA -->|HTTPS / Credentialed CORS| APIGW
+    APIGW -->|Proxy Integration| ApiLambda
+    ApiLambda -->|Enqueue Async Tasks| JobQueue
+    JobQueue -->|Event Source Mapping (Batch: 1)| WorkerLambda
+    JobQueue -.->|Max Retries Exceeded| JobDLQ
+    CronRule -->|Daily Trigger| JobQueue
+    
+    ApiLambda -->|State & Sessions| DynamoDB
+    ApiLambda -->|Store Logs & Diffs| S3Artifacts
+    WorkerLambda -->|State Updates| DynamoDB
+    WorkerLambda -->|Upload Patches & Diffs| S3Artifacts
+    WorkerLambda -->|AI Code Review & Root Cause| Bedrock
+    
+    SPA -->|Initiate Sign-In| GHOAuth
+    GHOAuth -->|OAuth Callback| ApiLambda
+    GHWebhooks -->|Signed HMAC Webhook Events| APIGW
+    WorkerLambda -->|Mint Installation Token & Clone/PR| GHRepos
 ```
 
-### Package layout
+---
 
-| Path | Role |
-|------|------|
-| `packages/domain` | Shared types, schema version, legal state transitions |
-| `packages/core` | Policy, audit/redaction, Brain, persistence, command runner, workflow |
-| `apps/api` | Local HTTP API + CLI demo |
-| `apps/web` | React operator dashboard |
-| `fixtures/demo-vulnerable` | Sole authorized write target for the MVP |
-| `infra/cdk` | AWS CDK Ship It stack |
+### Autonomous Remediation and Triage Pipeline
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Maintainer as Repository Maintainer
+    participant Web as Web Dashboard
+    participant API as API Gateway / ApiLambda
+    participant SQS as SQS Queue
+    participant Worker as Worker Lambda
+    participant Bedrock as Amazon Bedrock (Nova Micro)
+    participant Sandbox as Isolated Git Sandbox (/tmp)
+    participant GitHub as GitHub API
+
+    Maintainer->>Web: Select repository & click "Run Autonomous Triage"
+    Web->>API: POST /api/tasks (grantId, mode: REMEDIATE)
+    API->>API: Verify tenant authorization & quota limits
+    API->>SQS: Send job message (taskId, tenantId, target)
+    API-->>Web: HTTP 202 Accepted (Task QUEUED)
+    
+    SQS->>Worker: Dispatch job to worker
+    Worker->>Worker: Transition task state to TRIAGING
+    Worker->>Sandbox: Initialize isolated sandbox clone
+    Worker->>Sandbox: Execute static analysis & npm audit
+    
+    alt Bedrock LLM Reasoning Active
+        Worker->>Bedrock: Analyze failing tests, stack traces & AST evidence
+        Bedrock-->>Worker: Structured root-cause diagnosis & patch strategy
+    else Rule-Based Fallback
+        Worker->>Worker: Deterministic pattern matching on evidence nodes
+    end
+    
+    Worker->>Worker: Populate Repository Brain (Neurons & Synapses)
+    Worker->>Worker: Transition task state to IMPLEMENTING
+    Worker->>Sandbox: Apply minimal targeted patch
+    Worker->>Worker: Transition task state to VERIFYING
+    Worker->>Sandbox: Run verification test suite in isolation
+    
+    alt Tests Pass
+        Worker->>Worker: Transition task state to PR_ARTIFACT_READY
+        Worker->>GitHub: Create remediation branch & open Pull Request
+        Worker->>Worker: Transition task state to PR_CREATED
+    else Tests Fail
+        Worker->>Worker: Trigger regression rollback & log audit event
+    end
+    
+    Worker->>API: Update DynamoDB task record & upload artifacts to S3
+    Web->>API: GET /api/tasks/:id (Polling / Refresh)
+    API-->>Web: Task details, Brain neural map & audit trail
+```
 
 ---
 
-## Safety model
+### Multi-Tenant Org Brain Architecture
 
-- **Passive by default.** Inspect/analyze do not require a grant; writes do.
-- Writes are denied unless:
-  - An authorization grant exists for the fixture path.
-  - Requested capability is present (`write_files`, `create_branch`, `commit`, `draft_pr`, `run_tests`).
-  - Target path is inside the authorized fixture root.
-  - Commands match the grant allowlist.
-- Secrets matching token patterns are redacted from audit/command output.
-- Live GitHub PR creation is **not** performed in this MVP.
+```mermaid
+graph TD
+    subgraph RepositoryA["Repository A (Tenant Isolated)"]
+        FileNeuronA["File: src/math.ts"]
+        BugNeuronA["Bug: inclusiveRange off-by-one"]
+        PatchNeuronA["Patch: upper bound <= to <"]
+        FileNeuronA -->|LOCAL_TO| BugNeuronA
+        BugNeuronA -->|SOLVED_BY| PatchNeuronA
+    end
+
+    subgraph SharedOrgBrain["Cross-Repository Org Brain (Dependency Layer)"]
+        DepNeuron["Dependency: minimist@0.0.8"]
+        AdvisoryNeuron["CVE Advisory: Prototype Pollution"]
+        FixedDepNeuron["Fixed Version: minimist@1.2.6"]
+        DepNeuron -->|VULNERABLE_TO| AdvisoryNeuron
+        AdvisoryNeuron -->|UPGRADE_TARGET| FixedDepNeuron
+    end
+
+    subgraph RepositoryB["Repository B (Tenant Isolated)"]
+        FileNeuronB["File: package.json"]
+        FileNeuronB -->|DEPENDS_ON| DepNeuron
+    end
+
+    RepositoryA -.->|Shares dependency knowledge| SharedOrgBrain
+    RepositoryB -.->|Shares dependency knowledge| SharedOrgBrain
+
+    subgraph CognitiveDecay["Brain Cognitive Dynamics"]
+        Decay["Temporal Decay: Halts confidence on stale findings"]
+        Contradict["CONTRADICTS Edge: Invalidates disproven hypotheses"]
+    end
+```
 
 ---
 
-## Local run
+## 2. Core Capabilities by Phase
+
+- **Passive by Default:** Full inspection, vulnerability scanning, and Brain compilation require zero write permissions. Writes require explicit capability grants.
+- **Phase D (Org Brain):** Cross-repository dependency neuron sharing with tenant boundary isolation, temporal decay algorithms for stale findings, and CONTRADICTS synapse edges.
+- **Phase E (Security Research):** Capability-gated security engine requiring explicit `security-research` grant scope to prevent unauthorized code execution.
+- **Phase F (Automated Rescans & Webhooks):** Scheduled daily sweeps triggered by Amazon EventBridge cron rules and timing-safe HMAC-SHA256 signature verification on GitHub webhook payloads.
+- **Phase G (Automated PR Review Bot):** Autonomous PR code review bot providing detailed inline code comments and risk assessments without requiring repository merge permissions.
+- **Phase K (Multi-Tenant Access & Split Cloud):** GitHub OAuth flow, HTTP-only secure cookie session management, dynamic installation access token minting, per-user daily and monthly quotas, and directory-level sandbox isolation.
+- **Amazon Bedrock AI Reasoning:** Integrated live with APAC Nova Micro (`apac.amazon.nova-micro-v1:0`) in `ap-south-1`, returning structured JSON remediation plans with automatic deterministic rule fallback.
+
+---
+
+## 3. Environment Variables and Setup Guide
+
+To run UATU either locally or in production, obtain the keys and credentials detailed below.
+
+### Environment Variable Distribution
+
+| Variable Name | Environment | Description |
+|---|---|---|
+| `VITE_UATU_API_URL` | Public Frontend (Vercel) | Full base URL of the deployed AWS API Gateway. |
+| `VITE_UATU_GITHUB_APP_SLUG` | Public Frontend (Vercel) | GitHub App public URL slug for installation links. |
+| `UATU_GITHUB_APP_ID` | Private Backend (AWS / Local) | GitHub App numeric App ID. |
+| `UATU_GITHUB_APP_PRIVATE_KEY` | Private Backend (AWS / Local) | RSA private key in PEM format downloaded from GitHub App. |
+| `UATU_GITHUB_OAUTH_CLIENT_ID` | Private Backend (AWS / Local) | Client ID generated from the GitHub OAuth App. |
+| `UATU_GITHUB_OAUTH_CLIENT_SECRET`| Private Backend (AWS / Local) | Client secret generated from the GitHub OAuth App. |
+| `UATU_GITHUB_OAUTH_CALLBACK_URL` | Private Backend (AWS / Local) | OAuth callback endpoint on API Gateway. |
+| `UATU_GITHUB_WEBHOOK_SECRET` | Private Backend (AWS / Local) | Shared secret for timing-safe HMAC verification. |
+| `UATU_BEDROCK_ENABLED` | Private Backend (AWS / Local) | Set to `true` to enable Bedrock LLM reasoning. |
+| `UATU_BEDROCK_REGION` | Private Backend (AWS / Local) | AWS region for Bedrock inference (default: `ap-south-1`). |
+| `UATU_BEDROCK_MODEL_ID` | Private Backend (AWS / Local) | Bedrock model identifier (`apac.amazon.nova-micro-v1:0`). |
+| `UATU_WEB_ORIGIN` | Private Backend (AWS / Local) | Allowed frontend origin for CORS and session cookies. |
+| `UATU_CORS_ORIGIN` | Private Backend (AWS / Local) | Allowed CORS origin (set to `https://uatu-beta.vercel.app`). |
+| `UATU_COOKIE_SECURE` | Private Backend (AWS / Local) | Must be `true` in production for HTTPS cross-site cookies. |
+| `UATU_COOKIE_SAMESITE` | Private Backend (AWS / Local) | Must be `None` in production for cross-origin API cookies. |
+
+---
+
+### Step-by-Step Key Acquisition Guide
+
+#### 1. GitHub App (`uatu-agent`)
+A GitHub App allows UATU to clone repositories, open pull requests, and comment on reviews using temporary installation tokens.
+
+1. Go to **GitHub -> Settings -> Developer Settings -> GitHub Apps -> New GitHub App**.
+2. Set **GitHub App name**: `uatu-agent` (or your chosen name).
+3. Set **Homepage URL**: `https://uatu-beta.vercel.app`.
+4. Set **Setup URL (redirect after install)**: `https://uatu-beta.vercel.app/onboarding/complete`. Check **Redirect on setup**.
+5. Set **Webhook URL**: `https://2zq3almhy2.execute-api.ap-south-1.amazonaws.com/api/webhooks/github`.
+6. Set **Webhook secret**: Generate a random 32-byte hex string (e.g. `openssl rand -hex 32`) and save as `UATU_GITHUB_WEBHOOK_SECRET`.
+7. Configure **Permissions**:
+   - **Repository -> Contents**: Read and write (for reading code and creating remediation branches).
+   - **Repository -> Pull requests**: Read and write (for opening PRs and adding comments).
+   - **Repository -> Issues**: Read and write (for issue ingestion).
+   - **Repository -> Metadata**: Read-only (mandatory).
+8. Subscribe to **Events**:
+   - Check `Push`, `Pull request`, `Issues`, `Installation`, and `Installation repositories`.
+9. Click **Create GitHub App**:
+   - Note the numeric **App ID** displayed on the App settings page -> `UATU_GITHUB_APP_ID`.
+   - Scroll down to **Private keys**, click **Generate a private key**, and save the downloaded `.pem` file contents -> `UATU_GITHUB_APP_PRIVATE_KEY`.
+10. Click **Install App** in the sidebar to install it on your personal account or target organization.
+
+#### 2. GitHub OAuth App (User Authentication)
+The OAuth App allows users to log into the UATU web dashboard with their personal GitHub identity.
+
+1. Go to **GitHub -> Settings -> Developer Settings -> OAuth Apps -> New OAuth App**.
+2. Set **Application name**: `UATU Sign-In`.
+3. Set **Homepage URL**: `https://uatu-beta.vercel.app`.
+4. Set **Authorization callback URL**: `https://2zq3almhy2.execute-api.ap-south-1.amazonaws.com/auth/github/callback`.
+5. Click **Register application**.
+6. Copy the **Client ID** -> `UATU_GITHUB_OAUTH_CLIENT_ID`.
+7. Click **Generate a new client secret** and copy the resulting string -> `UATU_GITHUB_OAUTH_CLIENT_SECRET`.
+
+#### 3. Personal Access Token (PAT) - Optional
+A Classic or Fine-Grained Personal Access Token can be used as an alternative for local CLI demo runs without GitHub App configuration.
+
+1. Go to **GitHub -> Settings -> Developer Settings -> Personal access tokens -> Tokens (classic)**.
+2. Click **Generate new token (classic)**.
+3. Select scopes: `repo` (Full control of private repositories) and `workflow`.
+4. Copy the generated token -> `UATU_GITHUB_TOKEN`.
+5. Set `UATU_GITHUB_REPO=owner/repo` and `UATU_GITHUB_BASE_BRANCH=main`.
+
+#### 4. AWS Credentials and Amazon Bedrock Access
+1. Configure your local AWS CLI credentials profile (e.g. `erebuzzz` or default) via `aws configure` or AWS SSO.
+2. In the AWS Management Console for region `ap-south-1`, navigate to **Amazon Bedrock -> Model access**.
+3. Enable access for **Amazon Nova Micro** (inference profile: `apac.amazon.nova-micro-v1:0`).
+4. Ensure your local profile has permissions to run CDK deployments.
+
+---
+
+## 4. Local Development and Testing
 
 ### Prerequisites
-
 - Node.js 20+
-- Git available on `PATH`
+- Git on system `PATH`
+- AWS CLI configured (optional, for cloud sync/deploy)
 
-### Install
+### Installation
 
 ```bash
+git clone https://github.com/Erebuzzz/Universal-Autonomous-Triage-and-Upkeep.git
+cd Universal-Autonomous-Triage-and-Upkeep
 npm install
-npm run build -w @uatu/domain -w @uatu/core
+npm run build -w @uatu/domain && npm run build -w @uatu/core
 ```
 
-### Environment
-
-Copy `.env.example` values as needed. Bedrock stays off unless `UATU_BEDROCK_ENABLED=true`.
-
-Multi-tenant / GitHub App / Vercel+AWS split deploy: see [docs/MULTI_TENANT.md](docs/MULTI_TENANT.md).
-Live PR / App token setup (API host only): see [docs/GITHUB_APP.md](docs/GITHUB_APP.md).
-
-Detection mode (`UATU_DETECTION_MODE`, default `auto`):
-
-| Value | Behavior |
-|-------|----------|
-| `auto` | Try general detection (`npm audit` + optional LLM on failing tests); on timeout/error/empty findings, silently use the fixture detectors |
-| `fixture` | Hardcoded demo detectors only (`inclusiveRange` + `left-pad@1.0.1`) |
-| `general` | `npm audit` findings and optional Bedrock functional root-cause only (no fixture string match) |
-
-Audit events include `detection_mode_used` (`general` \| `fixture`); the dashboard shows it on `detection_completed` rows.
-
-Optional live GitHub contribution:
-
-```text
-UATU_GITHUB_TOKEN=<fine-grained or classic PAT with repo + pull request scopes>
-UATU_GITHUB_REPO=owner/name
-UATU_GITHUB_BASE_BRANCH=main
-UATU_GITHUB_WEBHOOK_SECRET=<optional shared secret for /api/webhooks/github>
-```
-
-Without those variables the e2e loop still completes with a local PR-ready artifact and state `PR_ARTIFACT_READY`. With them configured, UATU pushes the remediation branch and opens a real PR (`PR_CREATED`).
-
-### Headless demo (end-to-end)
+### Running the End-to-End Headless Demo
 
 ```bash
 npm run demo
 ```
 
-Expected final task state: `PR_ARTIFACT_READY` (or `PR_CREATED` when GitHub live mode is configured) with passing verification and a local branch under `uatu/…`.
+The demo copies `fixtures/demo-vulnerable` into an isolated sandbox at `data/sandbox/demo-vulnerable` (with its own isolated `.git` repository), executes static defect detection and vulnerability auditing, formulates a verified fix, and outputs a complete pull request artifact with zero risk to your parent monorepo.
 
-The API copies `fixtures/demo-vulnerable` into an isolated sandbox at `data/sandbox/demo-vulnerable` (own `.git`) so writes never touch the parent monorepo history.
-
-### API + dashboard
+### Starting Local Development Servers
 
 ```bash
+# Terminal 1: Start API server on http://localhost:8787
 npm run dev:api
+
+# Terminal 2: Start Vite web dashboard on http://localhost:5173
 npm run dev:web
 ```
 
-- API: http://localhost:8787/health  
-- UI: http://localhost:5173  
-
-Dashboard flow:
-
-1. **Authorize fixture**
-2. **Start run** (Brain init + findings)
-3. Select a finding
-4. **Run to PR artifact**
-5. Inspect neural map, audit trail, verification, and PR body
-
----
-
-## Tests
+### Running Automated Test Suites
 
 ```bash
+# Run all unit and integration tests (34 tests across 4 packages)
 npm test
+
+# Run TypeScript typechecks across the entire monorepo
+npm run typecheck
 ```
-
-Coverage includes:
-
-- Legal state transitions (`@uatu/domain`)
-- Policy denials and secret redaction (`@uatu/core`)
-- Full remediation integration against a temp fixture copy (`@uatu/api`)
-- CDK resource assertions (`@uatu/infra`)
 
 ---
 
-## AWS Ship It (CDK)
+## 5. Cloud Deployment
 
-Stack resources (least privilege, encrypted storage, 14-day log retention):
+### 1. AWS CDK Deployment (`infra/cdk`)
 
-- API Gateway HTTP API → API Lambda
-- SQS job queue (+ DLQ) → Worker Lambda
-- DynamoDB tasks/audit metadata
-- S3 artifact bucket
-- EventBridge bus
-- CloudFront + private S3 origin for the dashboard
-- **No OpenSearch** in this vertical slice
+The AWS infrastructure is defined using AWS CDK in TypeScript. It provisions:
+- API Gateway HTTP API with CORS credentials support.
+- Lambda API with bundled dependencies and a pre-packaged Git layer (`git-lambda2`).
+- SQS Worker Lambda with 5-minute timeout and dead-letter queue.
+- DynamoDB table with point-in-time recovery for task states, user sessions, and audit events.
+- S3 bucket with versioning and AES-256 encryption for patch artifacts.
+- EventBridge rule triggering automated 24-hour rescans.
 
-### Synthesize
-
-```bash
-cd infra/cdk
-npx cdk synth
-```
-
-### Diff / deploy
-
-Requires AWS credentials (set `AWS_PROFILE` or your preferred auth), CDK bootstrap in your project Region, and a review of `cdk diff` before deploy. For the new AWS experience, use the Region shown under AWS Settings (this repo defaults `CDK_DEFAULT_REGION` to `ap-south-1` when unset):
+To deploy:
 
 ```powershell
 cd infra/cdk
-$env:CDK_DEFAULT_REGION="ap-south-1"   # or your project Region
-$env:AWS_PROFILE="YOUR_AWS_PROFILE"
-npx cdk diff
-npx cdk deploy
+npx cdk deploy --require-approval never --profile erebuzzz
 ```
 
-After deploy, build and sync the web app (take `WebBucketName` and `ApiUrl` from CDK outputs):
+### 2. Vercel Frontend Deployment (`apps/web`)
+
+The frontend is deployed to Vercel and configured to communicate securely with the API Gateway:
 
 ```powershell
-$env:VITE_UATU_API_URL="<ApiUrl from cdk outputs>"
-npm run build -w @uatu/web
-aws s3 sync apps/web/dist s3://$WEB_BUCKET_NAME --profile $env:AWS_PROFILE
+# Deploy to Vercel production
+vercel --prod --yes
 ```
 
-If credentials are missing, leave the stack synth-ready and do not deploy.
+---
 
-Lambda packaging: API and worker are bundled from `apps/api/src/lambda-api.ts` and `lambda-worker.ts` via CDK `NodejsFunction`, including a copy of `fixtures/demo-vulnerable` as `fixture-seed`.
+## 6. Live Deployed Endpoints
 
-### Cost notes
-
-- On-demand DynamoDB and Lambda keep idle cost near zero.
-- CloudFront + S3 are pay-per-use.
-- Avoid enabling Bedrock/OpenSearch until needed.
+| Service | Target URL |
+|---|---|
+| **Production Web Dashboard** | [https://uatu-beta.vercel.app](https://uatu-beta.vercel.app) |
+| **Interactive In-App Documentation** | [https://uatu-beta.vercel.app/docs](https://uatu-beta.vercel.app/docs) |
+| **API Gateway Health Check** | [https://2zq3almhy2.execute-api.ap-south-1.amazonaws.com/health](https://2zq3almhy2.execute-api.ap-south-1.amazonaws.com/health) |
+| **GitHub OAuth Sign-In Endpoint** | [https://2zq3almhy2.execute-api.ap-south-1.amazonaws.com/auth/github](https://2zq3almhy2.execute-api.ap-south-1.amazonaws.com/auth/github) |
+| **GitHub App Post-Install Setup URL** | [https://uatu-beta.vercel.app/onboarding/complete](https://uatu-beta.vercel.app/onboarding/complete) |
+| **GitHub Webhook Ingestion Receiver** | [https://2zq3almhy2.execute-api.ap-south-1.amazonaws.com/api/webhooks/github](https://2zq3almhy2.execute-api.ap-south-1.amazonaws.com/api/webhooks/github) |
 
 ---
 
-## Demo script (~3 minutes)
+## 7. Monorepo Package Structure
 
-1. Show failing expectation in `fixtures/demo-vulnerable` (`inclusiveRange` / outdated dep).
-2. Authorize via dashboard or `npm run demo`.
-3. Brain initializes; findings appear with evidence.
-4. Run remediation; patch + regression path; verification PASS.
-5. Show audit trail and neural map activation.
-6. Show local branch + PR artifact (and live PR URL when GitHub is configured).
-7. Show CDK synth outputs / architecture briefly.
-
----
-
-## Configuration reference
-
-| Variable | Purpose |
-|----------|---------|
-| `UATU_DATA_DIR` | Local JSON persistence root (default `./data`; Lambda uses `/tmp/uatu-data`) |
-| `UATU_FIXTURE_SEED` | Read-only seed copied into the sandbox (default `./fixtures/demo-vulnerable`) |
-| `UATU_FIXTURE_PATH` | Writable sandbox path (default `data/sandbox/demo-vulnerable`) |
-| `UATU_API_PORT` | API port (default `8787`) |
-| `UATU_CORS_ORIGIN` | Dashboard origin |
-| `UATU_BEDROCK_ENABLED` | Optional LLM path |
-| `UATU_BEDROCK_MODEL_ID` | Bedrock model id when enabled |
-| `TASKS_TABLE` / `ARTIFACT_BUCKET` | When set, API uses DynamoDB + S3 instead of JSON files |
-| `JOB_QUEUE_URL` | When set with async jobs, `/api/tasks/:id/run` enqueues the worker |
-| `CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION` | CDK env (project Region for new AWS experience) |
+```text
+├── apps/
+│   ├── api/          # Express HTTP API, OAuth handshake, SQS worker, quota engine
+│   └── web/          # React SPA, neural Brain map, operator dashboard, docs reader
+├── packages/
+│   ├── domain/       # Shared TypeScript types, state machine, transition rules
+│   └── core/         # Repository Brain, policy engine, static & LLM detection, PR bot
+├── infra/
+│   └── cdk/          # AWS CDK stack (API Gateway, Lambda, SQS, DynamoDB, S3)
+├── fixtures/
+│   └── demo-vulnerable/  # Sandboxed vulnerable repository for verified test cases
+└── docs/             # In-depth architectural guides and deployment runbooks
+```
 
 ---
 
-## Known MVP limitations
+## 8. License
 
-- Single authorized fixture; no multi-repo org brain.
-- Live GitHub PR / webhook ingestion deferred.
-- Bedrock path is optional stub-safe; rules drive demo-critical decisions.
-- Dashboard hosting expects a post-deploy `s3 sync` of `apps/web/dist`.
-- Deployed remediation runs in Lambda `/tmp` against the bundled fixture seed (not a live GitHub clone).
-- Explicit `cdk deploy` confirmation required; do not deploy from CI without review.
-
----
-
-## License / contribution
-
-Licensed under the [MIT License](./LICENSE) (SPDX: `MIT`).
-
-Ship It MVP: treat the fixture as the only write target unless you extend the policy grants deliberately.
+This project is licensed under the [MIT License](./LICENSE).
