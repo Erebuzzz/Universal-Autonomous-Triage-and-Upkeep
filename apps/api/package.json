@@ -1,0 +1,35 @@
+{
+  "name": "@uatu/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "demo": "tsx src/demo.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test src/workflow.test.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.758.0",
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/client-sqs": "^3.758.0",
+    "@aws-sdk/lib-dynamodb": "^3.758.0",
+    "@uatu/core": "*",
+    "@uatu/domain": "*",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm install
+      - run: npm run build -w @uatu/domain -w @uatu/core -w @uatu/api -w @uatu/web
+      - run: npm test
+      - run: npm run typecheck
+      - name: CDK synth
+        working-directory: infra/cdk
+        run: npx cdk synth
+        env:
+          CDK_DEFAULT_ACCOUNT: "123456789012"
+          CDK_DEFAULT_REGION: ap-south-1

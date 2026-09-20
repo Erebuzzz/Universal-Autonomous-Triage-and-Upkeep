@@ -1,0 +1,24 @@
+{
+  "name": "@uatu/infra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy --require-approval never",
+    "test": "node --import tsx --test test/uatu-stack.test.ts",
+    "cdk": "cdk"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.173.2",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "aws-cdk": "^2.173.2",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "uatu",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Universal Autonomous Triage & Upkeep — Observe. Understand. Repair. Contribute.",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "infra/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @uatu/domain && npm run build -w @uatu/core && npm run build -w @uatu/api && npm run build -w @uatu/web && npm run build -w @uatu/infra",
+    "test": "npm run test -w @uatu/domain && npm run test -w @uatu/core && npm run test -w @uatu/api && npm run test -w @uatu/infra",
+    "lint": "npm run lint -w @uatu/domain && npm run lint -w @uatu/core && npm run lint -w @uatu/api && npm run lint -w @uatu/web",
+    "typecheck": "npm run typecheck -w @uatu/domain && npm run typecheck -w @uatu/core && npm run typecheck -w @uatu/api && npm run typecheck -w @uatu/web",
+    "dev:api": "npm run dev -w @uatu/api",
+    "dev:web": "npm run dev -w @uatu/web",
+    "demo": "npm run demo -w @uatu/api",
+    "cdk": "npm run cdk -w @uatu/infra",
+    "cdk:synth": "npm run synth -w @uatu/infra",
+    "cdk:diff": "npm run diff -w @uatu/infra"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

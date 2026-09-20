@@ -1,0 +1,13 @@
+{
+  "name": "demo-vulnerable",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Authorized UATU demo fixture with intentional functional bug and outdated dependency",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/**/*.test.js"
+  },
+  "dependencies": {
+    "left-pad": "1.0.1"
+  }
+}

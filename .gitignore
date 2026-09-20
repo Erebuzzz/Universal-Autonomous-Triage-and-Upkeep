@@ -1,0 +1,26 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.local
+*.log
+.DS_Store
+.cdk.staging/
+cdk.out/
+data/
+.uatu/
+*.tsbuildinfo
+apps/web/dist/
+fixtures/demo-vulnerable/node_modules/
+fixtures/demo-vulnerable/.uatu-work/
+.aws-sam/
+.turbo/
+
+# Ephemeral agent / workflow handoffs (never commit)
+WORKFLOW_CONTEXT*.md
+**/WORKFLOW_CONTEXT*.md
+*agent*handoff*
+*_HANDOFF*.md
+.agent-handoffs/
+agent-store-handoff*
