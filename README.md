@@ -4,9 +4,9 @@
 
 **Observe. Understand. Repair. Contribute.**
 
-UATU is an autonomous open-source engineering and security research agent that analyzes an *authorized* repository, builds a persistent repository Brain, investigates bugs and dependency risks, applies minimal verified fixes, and produces reviewable PR-ready artifacts.
+UATU is an autonomous open-source engineering and security research agent that analyzes an *authorized* repository, builds a persistent repository Brain, investigates bugs and dependency risks, applies minimal verified fixes, and contributes reviewable GitHub pull requests (or local PR artifacts when GitHub credentials are unset).
 
-This repository ships a **Ship It MVP**: local-first execution with deterministic rule-based decisions (Amazon Bedrock optional), plus an AWS CDK (TypeScript) path for API, worker, storage, and dashboard hosting.
+This repository ships a **complete MVP vertical slice**: local-first execution with deterministic rule-based decisions (Amazon Bedrock optional), optional live GitHub PR open, GitHub webhook ingestion for PR events, plus an AWS CDK (TypeScript) path for API, worker, storage, and dashboard hosting.
 
 ---
 
@@ -19,9 +19,11 @@ This repository ships a **Ship It MVP**: local-first execution with deterministi
    - Functional bug: `inclusiveRange` off-by-one in `fixtures/demo-vulnerable`.
    - Dependency security: deliberately pinned outdated `left-pad@1.0.1`.
 5. Isolated command runner (allowlist, timeout, redaction).
-6. Local branch + commit + PR-ready markdown artifact (live GitHub PR deferred).
-7. Operator dashboard (Pixasso-directed technical UI) for authorize → run → inspect → verify → PR.
-8. Cost-conscious AWS CDK stack (no OpenSearch in this slice).
+6. Local branch + commit + PR artifact; optional live GitHub PR when `UATU_GITHUB_TOKEN` and `UATU_GITHUB_REPO` are set.
+7. Operator dashboard for authorize → run → inspect → verify → contribute.
+8. Cost-conscious AWS CDK stack (OpenSearch / Step Functions / multi-repo Brain deferred as stretch).
+9. Fixture issue import (`ISSUES.json`) and optional GitHub Issues API import into the Brain.
+10. GitHub webhook endpoint (`POST /api/webhooks/github`) to record PR lifecycle observations.
 
 ---
 
@@ -43,7 +45,10 @@ flowchart LR
     Verify --> Fixture
     Verify --> Brain
     Brain --> Audit[AuditTrail]
-    Orchestrator --> PrDraft[PRReadyArtifact]
+    Orchestrator --> PrAgent[PRAgent]
+    PrAgent --> GitHub[OptionalGitHubPR]
+    Api --> Webhook[GitHubWebhook]
+    Webhook --> Brain
     Api --> Jobs[SQSJobs]
     Jobs --> Worker[LambdaWorker]
     Worker --> Store[DynamoDBAndS3]
@@ -93,13 +98,24 @@ npm run build -w @uatu/domain -w @uatu/core
 
 Copy `.env.example` values as needed. Bedrock stays off unless `UATU_BEDROCK_ENABLED=true`.
 
+Optional live GitHub contribution:
+
+```text
+UATU_GITHUB_TOKEN=<fine-grained or classic PAT with repo + pull request scopes>
+UATU_GITHUB_REPO=owner/name
+UATU_GITHUB_BASE_BRANCH=main
+UATU_GITHUB_WEBHOOK_SECRET=<optional shared secret for /api/webhooks/github>
+```
+
+Without those variables the e2e loop still completes with a local PR-ready artifact and state `PR_ARTIFACT_READY`. With them configured, UATU pushes the remediation branch and opens a real PR (`PR_CREATED`).
+
 ### Headless demo (end-to-end)
 
 ```bash
 npm run demo
 ```
 
-Expected final task state: `PR_ARTIFACT_READY` with passing verification and a local branch under `uatu/…`.
+Expected final task state: `PR_ARTIFACT_READY` (or `PR_CREATED` when GitHub live mode is configured) with passing verification and a local branch under `uatu/…`.
 
 The API copies `fixtures/demo-vulnerable` into an isolated sandbox at `data/sandbox/demo-vulnerable` (own `.git`) so writes never touch the parent monorepo history.
 
@@ -169,9 +185,10 @@ npx cdk diff
 npx cdk deploy
 ```
 
-After deploy, build and sync the web app (take `WebBucketName` from CDK outputs):
+After deploy, build and sync the web app (take `WebBucketName` and `ApiUrl` from CDK outputs):
 
 ```powershell
+$env:VITE_UATU_API_URL="<ApiUrl from cdk outputs>"
 npm run build -w @uatu/web
 aws s3 sync apps/web/dist s3://$WEB_BUCKET_NAME --profile $env:AWS_PROFILE
 ```
@@ -195,7 +212,7 @@ Lambda packaging: API and worker are bundled from `apps/api/src/lambda-api.ts` a
 3. Brain initializes; findings appear with evidence.
 4. Run remediation; patch + regression path; verification PASS.
 5. Show audit trail and neural map activation.
-6. Show local branch + PR-ready artifact (GitHub open deferred).
+6. Show local branch + PR artifact (and live PR URL when GitHub is configured).
 7. Show CDK synth outputs / architecture briefly.
 
 ---

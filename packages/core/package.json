@@ -15,7 +15,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test src/policy.test.ts"
+    "test": "node --import tsx --test src/policy.test.ts src/github.test.ts"
   },
   "dependencies": {
     "@uatu/domain": "*"

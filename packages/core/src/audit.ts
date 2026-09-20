@@ -5,6 +5,7 @@ const SECRET_PATTERNS: RegExp[] = [
   /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b/g,
   /\b(?:sk|pk)-[A-Za-z0-9]{16,}\b/g,
   /\bAKIA[0-9A-Z]{16}\b/g,
+  /x-access-token:[^@\s]+@/gi,
   /\b(?:api[_-]?key|token|secret|password)\s*[:=]\s*['"]?[^\s'"]{8,}/gi,
   /Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi,
 ];

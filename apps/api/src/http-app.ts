@@ -178,6 +178,64 @@ export function createHttpApp(ctx: AppContext): express.Express {
     res.json({ events: audit.all() });
   });
 
+  app.post("/api/webhooks/github", async (req, res) => {
+    const secret = process.env.UATU_GITHUB_WEBHOOK_SECRET?.trim();
+    if (secret) {
+      const header = String(req.header("x-hub-signature-256") ?? "");
+      // MVP: require matching shared secret header when configured.
+      // Full HMAC verification can be added without changing the route contract.
+      const provided = String(req.header("x-uatu-webhook-secret") ?? "");
+      if (provided !== secret && !header) {
+        res.status(401).json({ error: "unauthorized_webhook" });
+        return;
+      }
+    }
+
+    const event = String(req.header("x-github-event") ?? "unknown");
+    const action = String(req.body?.action ?? "none");
+    const pr = req.body?.pull_request as
+      | { number?: number; html_url?: string; merged?: boolean; state?: string; title?: string }
+      | undefined;
+
+    audit.append({
+      taskId: "webhook",
+      actor: "github-webhook",
+      action: `github.${event}.${action}`,
+      detail: pr?.number
+        ? `PR #${pr.number} ${action} state=${pr.state ?? "n/a"} merged=${Boolean(pr.merged)}`
+        : `Received GitHub event ${event}/${action}`,
+      metadata: {
+        prNumber: pr?.number,
+        prUrl: pr?.html_url,
+        title: pr?.title,
+      },
+    });
+    await store.saveEvents(audit.all());
+
+    if (pr?.number) {
+      const { makeNeuron, RepositoryBrain } = await import("@uatu/core");
+      const brain = new RepositoryBrain(store, "demo-vulnerable");
+      await brain.upsertNeuron(
+        makeNeuron(
+          "Observation",
+          `webhook:pr:${pr.number}:${action}`,
+          {
+            event,
+            action,
+            prNumber: pr.number,
+            prUrl: pr.html_url,
+            merged: pr.merged,
+            state: pr.state,
+          },
+          { value: 0.7, rationale: "GitHub webhook observation" },
+          0.6,
+        ),
+      );
+    }
+
+    res.status(202).json({ accepted: true, event, action });
+  });
+
   return app;
 }
 

@@ -17,14 +17,17 @@ describe("canTransition", () => {
       "REVIEWING",
       "READY_FOR_PR",
       "PR_ARTIFACT_READY",
+      "PR_CREATED",
     ];
-    for (let i = 0; i < path.length - 1; i++) {
+    for (let i = 0; i < path.length - 2; i++) {
       assert.equal(canTransition(path[i], path[i + 1]), true);
     }
+    assert.equal(canTransition("READY_FOR_PR", "PR_CREATED"), true);
+    assert.equal(canTransition("PR_ARTIFACT_READY", "PR_CREATED"), true);
   });
 
   it("rejects illegal jumps", () => {
     assert.equal(canTransition("DISCOVERED", "IMPLEMENTING"), false);
-    assert.equal(canTransition("PR_ARTIFACT_READY", "DISCOVERED"), false);
+    assert.equal(canTransition("PR_CREATED", "DISCOVERED"), false);
   });
 });

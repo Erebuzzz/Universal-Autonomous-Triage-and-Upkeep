@@ -32,6 +32,7 @@ export type TaskState =
   | "REVIEWING"
   | "READY_FOR_PR"
   | "PR_ARTIFACT_READY"
+  | "PR_CREATED"
   | "BLOCKED"
   | "NEEDS_HUMAN"
   | "VERIFICATION_FAILED"
@@ -50,8 +51,9 @@ export const LEGAL_TRANSITIONS: Record<TaskState, readonly TaskState[]> = {
   TESTING: ["MEMORY_UPDATED", "VERIFICATION_FAILED", "BLOCKED"],
   MEMORY_UPDATED: ["REVIEWING", "BLOCKED"],
   REVIEWING: ["READY_FOR_PR", "NEEDS_HUMAN", "BLOCKED"],
-  READY_FOR_PR: ["PR_ARTIFACT_READY", "BLOCKED"],
-  PR_ARTIFACT_READY: [],
+  READY_FOR_PR: ["PR_ARTIFACT_READY", "PR_CREATED", "BLOCKED"],
+  PR_ARTIFACT_READY: ["PR_CREATED", "BLOCKED"],
+  PR_CREATED: [],
   BLOCKED: ["DISCOVERED", "TRIAGED", "SELECTED"],
   NEEDS_HUMAN: ["SELECTED", "INVESTIGATING", "IMPLEMENTING"],
   VERIFICATION_FAILED: ["IMPLEMENTING", "NEEDS_HUMAN", "BLOCKED"],
@@ -221,7 +223,10 @@ export interface PrReadyArtifact {
   changedFiles: string[];
   commitMessage: string;
   verificationPassed: boolean;
-  localOnly: true;
+  /** False when a live GitHub PR was opened successfully. */
+  localOnly: boolean;
+  prUrl?: string;
+  prNumber?: number;
 }
 
 export interface RemediationTask {

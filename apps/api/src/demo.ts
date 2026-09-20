@@ -22,11 +22,17 @@ async function demo() {
   console.log("PR title:", task.prArtifact?.title);
   console.log("Audit events:", audit.forTask(task.id).length);
 
-  if (task.state !== "PR_ARTIFACT_READY" || !task.verification?.passed) {
+  if (task.state !== "PR_ARTIFACT_READY" && task.state !== "PR_CREATED") {
     console.error("Demo did not complete successfully");
     console.error("Verification checks:", task.verification?.checks);
     process.exit(1);
   }
+  if (!task.verification?.passed) {
+    console.error("Demo verification failed");
+    process.exit(1);
+  }
+  console.log("PR localOnly:", task.prArtifact?.localOnly);
+  if (task.prArtifact?.prUrl) console.log("PR URL:", task.prArtifact.prUrl);
   console.log("Demo OK");
 }
 

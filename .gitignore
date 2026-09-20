@@ -8,6 +8,7 @@ coverage/
 .DS_Store
 .cdk.staging/
 cdk.out/
+infra/cdk/cdk-outputs.json
 data/
 .uatu/
 *.tsbuildinfo

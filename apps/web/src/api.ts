@@ -36,6 +36,9 @@ export interface RemediationTask {
     body: string;
     branchName: string;
     commitMessage: string;
+    localOnly?: boolean;
+    prUrl?: string;
+    prNumber?: number;
   };
 }
 
@@ -78,7 +81,7 @@ export interface Grant {
   capabilities: string[];
 }
 
-const base = "";
+const base = (import.meta.env.VITE_UATU_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${base}${url}`, {

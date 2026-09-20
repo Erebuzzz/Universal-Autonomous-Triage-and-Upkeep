@@ -1,0 +1,14 @@
+[
+  {
+    "number": 1,
+    "title": "inclusiveRange excludes end bound",
+    "body": "Calling inclusiveRange(1, 3) returns [1, 2] but should return [1, 2, 3].",
+    "labels": ["bug"]
+  },
+  {
+    "number": 2,
+    "title": "Dependency left-pad is outdated",
+    "body": "package.json pins left-pad@1.0.1; bump to a maintained version.",
+    "labels": ["security", "dependencies"]
+  }
+]

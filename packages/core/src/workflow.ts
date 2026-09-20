@@ -17,6 +17,12 @@ import { AuditTrail, transitionAudit } from "./audit.js";
 import { RepositoryBrain, makeNeuron } from "./brain.js";
 import { runCommand } from "./command-runner.js";
 import { decideWithOptionalLlm, ruleTriagePriority } from "./llm.js";
+import {
+  createPullRequest,
+  isGitHubLiveEnabled,
+  listOpenIssues,
+  remoteUrlForConfiguredRepo,
+} from "./github.js";
 import type { ArtifactStore, AuditStore, BrainStore, GrantStore, TaskStore } from "./persistence.js";
 import { AuthorizationPolicy, PolicyDeniedError } from "./policy.js";
 
@@ -74,6 +80,8 @@ export class WorkflowOrchestrator {
         "git rev-parse",
         "git branch",
         "git config",
+        "git remote",
+        "git push",
       ],
       grantedBy: input.grantedBy,
       grantedAt: new Date().toISOString(),
@@ -155,7 +163,12 @@ export class WorkflowOrchestrator {
         task = await this.composePr(task, grant);
         break;
       case "READY_FOR_PR":
-        task = await this.finalizeArtifact(task);
+        task = await this.finalizeArtifact(task, grant);
+        break;
+      case "PR_ARTIFACT_READY":
+        if (isGitHubLiveEnabled()) {
+          task = await this.publishPullRequest(task, grant);
+        }
         break;
       default:
         break;
@@ -167,7 +180,7 @@ export class WorkflowOrchestrator {
   async runToCompletion(taskId: string, selectedFindingId?: string): Promise<RemediationTask> {
     let task = await this.requireTask(taskId);
     const terminal = new Set<TaskState>([
-      "PR_ARTIFACT_READY",
+      "PR_CREATED",
       "BLOCKED",
       "NEEDS_HUMAN",
       "VERIFICATION_FAILED",
@@ -175,9 +188,10 @@ export class WorkflowOrchestrator {
       "LOW_CONFIDENCE",
     ]);
     let guard = 0;
-    while (!terminal.has(task.state) && guard < 20) {
+    while (!terminal.has(task.state) && guard < 24) {
       const before = task.state;
       task = await this.advance(task.id, selectedFindingId);
+      if (task.state === "PR_ARTIFACT_READY" && !isGitHubLiveEnabled()) break;
       if (task.state === before) {
         // Need selection input
         if (task.state === "TRIAGED" && !selectedFindingId && !task.selectedFindingId) {
@@ -197,6 +211,7 @@ export class WorkflowOrchestrator {
     grant?: AuthorizationGrant,
   ): Promise<RemediationTask> {
     const graph = await this.brain.initializeFromTree(task.repositoryPath);
+    await this.ingestIssues(task.repositoryPath);
     const findings = await this.detectFindings(task.repositoryPath, graph.neurons.map((n) => n.id));
 
     const llm = await decideWithOptionalLlm(
@@ -220,6 +235,79 @@ export class WorkflowOrchestrator {
       metadata: { grantId: grant?.id },
     });
     return task;
+  }
+
+  private async ingestIssues(repoPath: string): Promise<void> {
+    const localIssuesPath = path.join(repoPath, "ISSUES.json");
+    try {
+      const raw = await readFile(localIssuesPath, "utf8");
+      const issues = JSON.parse(raw) as Array<{
+        number: number;
+        title: string;
+        body?: string;
+        labels?: string[];
+      }>;
+      for (const issue of issues) {
+        const neuron = makeNeuron(
+          "Issue",
+          `issue:${issue.number}`,
+          {
+            number: issue.number,
+            title: issue.title,
+            body: issue.body ?? "",
+            labels: issue.labels ?? [],
+            source: "fixture",
+          },
+          { value: 0.8, rationale: "Imported from authorized fixture ISSUES.json" },
+          0.7,
+        );
+        await this.brain.upsertNeuron(neuron);
+      }
+      this.deps.audit.append({
+        taskId: "system",
+        actor: "research",
+        action: "issues_imported",
+        detail: `Imported ${issues.length} fixture issues into brain`,
+      });
+    } catch {
+      /* optional file */
+    }
+
+    if (!isGitHubLiveEnabled()) return;
+    try {
+      const remoteIssues = await listOpenIssues(15);
+      for (const issue of remoteIssues) {
+        const neuron = makeNeuron(
+          "Issue",
+          `issue:gh:${issue.number}`,
+          {
+            number: issue.number,
+            title: issue.title,
+            body: issue.body,
+            htmlUrl: issue.htmlUrl,
+            source: "github",
+          },
+          { value: 0.75, rationale: "Imported from GitHub Issues API" },
+          0.65,
+        );
+        await this.brain.upsertNeuron(neuron);
+      }
+      if (remoteIssues.length) {
+        this.deps.audit.append({
+          taskId: "system",
+          actor: "research",
+          action: "github_issues_imported",
+          detail: `Imported ${remoteIssues.length} open GitHub issues`,
+        });
+      }
+    } catch (err) {
+      this.deps.audit.append({
+        taskId: "system",
+        actor: "research",
+        action: "github_issues_import_failed",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   private async selectFinding(task: RemediationTask, selectedFindingId?: string): Promise<RemediationTask> {
@@ -535,6 +623,7 @@ export class WorkflowOrchestrator {
     }
 
     const finding = task.findings.find((f) => f.id === task.selectedFindingId);
+    const live = isGitHubLiveEnabled();
     const artifact: PrReadyArtifact = {
       title: finding?.title ?? "UATU remediation",
       body: [
@@ -548,13 +637,15 @@ export class WorkflowOrchestrator {
         ...(task.verification?.checks.map((c) => `- ${c.name}: ${c.passed ? "PASS" : "FAIL"}`) ?? []),
         "",
         "## Notes",
-        "Live GitHub PR creation is deferred. This artifact is PR-ready for manual open.",
+        live
+          ? "UATU will attempt to open a live GitHub pull request after this artifact is composed."
+          : "Set UATU_GITHUB_TOKEN and UATU_GITHUB_REPO to open a live PR. Without them, this artifact stays local-only.",
         "",
         `Branch: \`${task.patch?.branchName}\``,
         `Commit: \`${task.patch?.commitSha ?? "n/a"}\``,
       ].join("\n"),
       branchName: task.patch?.branchName ?? "uatu/unknown",
-      baseBranch: "main",
+      baseBranch: process.env.UATU_GITHUB_BASE_BRANCH?.trim() || "main",
       changedFiles: task.patch?.changedFiles ?? [],
       commitMessage: finding?.kind === "functional_bug"
         ? "fix: make inclusiveRange include the end bound"
@@ -568,11 +659,115 @@ export class WorkflowOrchestrator {
       `# ${artifact.title}\n\n${artifact.body}\n`,
       "text/markdown",
     );
-    return this.transition(task, "READY_FOR_PR", "pr", "PR-ready artifact composed (local only)");
+    return this.transition(task, "READY_FOR_PR", "pr", "PR-ready artifact composed");
   }
 
-  private async finalizeArtifact(task: RemediationTask): Promise<RemediationTask> {
+  private async finalizeArtifact(
+    task: RemediationTask,
+    grant?: AuthorizationGrant,
+  ): Promise<RemediationTask> {
+    if (isGitHubLiveEnabled()) {
+      return this.publishPullRequest(task, grant);
+    }
     return this.transition(task, "PR_ARTIFACT_READY", "pr", "Local branch + PR artifact ready");
+  }
+
+  private async publishPullRequest(
+    task: RemediationTask,
+    grant?: AuthorizationGrant,
+  ): Promise<RemediationTask> {
+    if (!grant) throw new PolicyDeniedError("Live PR requires grant");
+    this.deps.policy.assertCapability(
+      { mode: task.mode, grant, fixtureRoot: this.deps.fixturePath },
+      "draft_pr",
+    );
+    if (!task.prArtifact || !task.patch?.branchName) {
+      throw new PolicyDeniedError("Missing PR artifact or branch");
+    }
+
+    const remote = remoteUrlForConfiguredRepo();
+    if (!remote) {
+      return this.transition(
+        task,
+        "PR_ARTIFACT_READY",
+        "pr",
+        "GitHub live mode incomplete; kept local artifact",
+      );
+    }
+
+    const remoteName = "uatu-origin";
+    await runCommand("git", ["remote", "remove", remoteName], {
+      cwd: task.repositoryPath,
+      policy: this.deps.policy,
+      grant,
+      timeoutMs: 30_000,
+    });
+    await runCommand("git", ["remote", "add", remoteName, remote], {
+      cwd: task.repositoryPath,
+      policy: this.deps.policy,
+      grant,
+      timeoutMs: 30_000,
+    });
+    const push = await runCommand("git", ["push", "-u", remoteName, `HEAD:${task.patch.branchName}`], {
+      cwd: task.repositoryPath,
+      policy: this.deps.policy,
+      grant,
+      timeoutMs: 120_000,
+    });
+    if (push.exitCode !== 0) {
+      this.deps.audit.append({
+        taskId: task.id,
+        actor: "pr",
+        action: "git_push_failed",
+        detail: "Push to GitHub failed; keeping local PR artifact",
+      });
+      return this.transition(task, "PR_ARTIFACT_READY", "pr", "git push failed; local artifact retained");
+    }
+
+    try {
+      const pr = await createPullRequest({
+        title: task.prArtifact.title,
+        body: task.prArtifact.body,
+        head: task.patch.branchName,
+        base: task.prArtifact.baseBranch,
+      });
+      task.prArtifact = {
+        ...task.prArtifact,
+        localOnly: false,
+        prUrl: pr.htmlUrl,
+        prNumber: pr.number,
+      };
+      await this.deps.store.saveTask(task);
+      await this.deps.store.put(
+        `pr/${task.id}.md`,
+        `# ${task.prArtifact.title}\n\nPR: ${pr.htmlUrl}\n\n${task.prArtifact.body}\n`,
+        "text/markdown",
+      );
+
+      const prNeuron = makeNeuron(
+        "Observation",
+        `pr:${pr.number}`,
+        { prNumber: pr.number, prUrl: pr.htmlUrl, branch: task.patch.branchName },
+        { value: 0.95, rationale: "Live GitHub PR opened" },
+        0.9,
+      );
+      await this.brain.upsertNeuron(prNeuron);
+
+      return this.transition(task, "PR_CREATED", "pr", `Opened GitHub PR #${pr.number}`);
+    } catch (err) {
+      this.deps.audit.append({
+        taskId: task.id,
+        actor: "pr",
+        action: "github_pr_failed",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+      return this.transition(
+        task,
+        "PR_ARTIFACT_READY",
+        "pr",
+        "GitHub PR API failed; local artifact retained",
+      );
+    }
   }
 
   private async detectFindings(

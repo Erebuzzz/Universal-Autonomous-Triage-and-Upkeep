@@ -14,18 +14,17 @@ const FLOW = [
   "Start remediation",
   "Inspect findings",
   "Run investigate → patch → verify",
-  "Review PR-ready artifact",
+  "Review PR / contribute",
 ] as const;
 
 function flowIndex(task?: RemediationTask, grant?: Grant | null): number {
   if (!grant) return 0;
   if (!task) return 1;
   if (task.state === "TRIAGED" || task.state === "DISCOVERED") return 2;
-  if (task.prArtifact) return 4;
+  if (task.state === "PR_ARTIFACT_READY" || task.state === "PR_CREATED" || task.prArtifact) return 4;
   if (["SELECTED", "MEMORY_CONTEXT_LOADED", "INVESTIGATING", "ROOT_CAUSE_VERIFIED", "IMPLEMENTING", "TESTING", "MEMORY_UPDATED", "REVIEWING", "READY_FOR_PR"].includes(task.state)) {
     return 3;
   }
-  if (task.state === "PR_ARTIFACT_READY") return 4;
   return 2;
 }
 
@@ -143,10 +142,10 @@ export function App() {
             <button
               className="btn"
               type="button"
-              disabled={busy || !task || task.state === "PR_ARTIFACT_READY"}
+              disabled={busy || !task || task.state === "PR_ARTIFACT_READY" || task.state === "PR_CREATED"}
               onClick={runSelected}
             >
-              Run to PR artifact
+              Run to PR
             </button>
           </div>
 
@@ -278,17 +277,25 @@ export function App() {
           </div>
 
           <div className="pr-box">
-            <h3>PR-ready artifact</h3>
+            <h3>Contribution</h3>
             {!task?.prArtifact ? (
               <p className="empty" style={{ border: "none", padding: 0 }}>
-                Local PR draft appears after successful verification. Live GitHub PR is deferred.
+                PR draft appears after verification. Set UATU_GITHUB_TOKEN + UATU_GITHUB_REPO for a live GitHub PR.
               </p>
             ) : (
               <>
                 <p className="finding-title">{task.prArtifact.title}</p>
                 <p className="finding-meta">
                   Branch <code>{task.prArtifact.branchName}</code>
+                  {task.prArtifact.localOnly === false ? " · live PR opened" : " · local artifact"}
                 </p>
+                {task.prArtifact.prUrl ? (
+                  <p className="finding-meta">
+                    <a href={task.prArtifact.prUrl} target="_blank" rel="noreferrer">
+                      {task.prArtifact.prUrl}
+                    </a>
+                  </p>
+                ) : null}
                 <pre>{task.prArtifact.body}</pre>
               </>
             )}
