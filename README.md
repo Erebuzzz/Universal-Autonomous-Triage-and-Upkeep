@@ -159,21 +159,21 @@ npx cdk synth
 
 ### Diff / deploy
 
-Requires AWS credentials (profile `erebuzzz` or equivalent), account bootstrap (`cdk bootstrap`), and explicit confirmation after reviewing the diff. For the new AWS experience, use the project Region (`ap-south-1` unless AWS Settings shows otherwise):
+Requires AWS credentials (set `AWS_PROFILE` or your preferred auth), CDK bootstrap in your project Region, and a review of `cdk diff` before deploy. For the new AWS experience, use the Region shown under AWS Settings (this repo defaults `CDK_DEFAULT_REGION` to `ap-south-1` when unset):
 
-```bash
+```powershell
 cd infra/cdk
-$env:CDK_DEFAULT_REGION="ap-south-1"
-$env:AWS_PROFILE="erebuzzz"
+$env:CDK_DEFAULT_REGION="ap-south-1"   # or your project Region
+$env:AWS_PROFILE="YOUR_AWS_PROFILE"
 npx cdk diff
 npx cdk deploy
 ```
 
-After deploy, build and sync the web app:
+After deploy, build and sync the web app (take `WebBucketName` from CDK outputs):
 
-```bash
+```powershell
 npm run build -w @uatu/web
-aws s3 sync apps/web/dist s3://$WEB_BUCKET_NAME --profile erebuzzz
+aws s3 sync apps/web/dist s3://$WEB_BUCKET_NAME --profile $env:AWS_PROFILE
 ```
 
 If credentials are missing, leave the stack synth-ready and do not deploy.

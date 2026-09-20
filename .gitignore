@@ -24,3 +24,6 @@ WORKFLOW_CONTEXT*.md
 *_HANDOFF*.md
 .agent-handoffs/
 agent-store-handoff*
+
+# Large agentic build prompt (local only; do not publish)
+UATU Agentic Build Prompt.md
