@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" width="100%" height="100%">
+  <defs>
+    <!-- Background aura glow -->
+    <radialGradient id="uatu-aura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.3" />
+      <stop offset="60%" stop-color="#ef4444" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Emerald Optic Glow -->
+    <radialGradient id="emerald-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00ff88" stop-opacity="1" />
+      <stop offset="40%" stop-color="#10b981" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Crimson Optic Glow -->
+    <radialGradient id="crimson-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff4444" stop-opacity="1" />
+      <stop offset="40%" stop-color="#ef4444" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#ef4444" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Facet Armor Gradients -->
+    <linearGradient id="armor-helm" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <linearGradient id="armor-left" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <linearGradient id="armor-right" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <filter id="glow-blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Ambient Glow Backing -->
+  <circle cx="60" cy="60" r="54" fill="url(#uatu-aura)" />
+
+  <!-- Outer Crown Dendrons (Synaptic Horns) -->
+  <!-- Left Horns -->
+  <path d="M 40 32 L 24 14 L 32 36 L 42 42 Z" fill="#0f172a" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round" />
+  <path d="M 46 26 L 36 6 L 44 26 Z" fill="#1e293b" stroke="#00ff88" stroke-width="1.2" stroke-linejoin="round" />
+  
+  <!-- Right Horns -->
+  <path d="M 80 32 L 96 14 L 88 36 L 78 42 Z" fill="#0f172a" stroke="#ef4444" stroke-width="1.5" stroke-linejoin="round" />
+  <path d="M 74 26 L 84 6 L 76 26 Z" fill="#1e293b" stroke="#ff4444" stroke-width="1.2" stroke-linejoin="round" />
+
+  <!-- Central Crest -->
+  <path d="M 60 12 L 68 28 L 60 34 L 52 28 Z" fill="#1e293b" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" />
+  <line x1="60" y1="12" x2="60" y2="34" stroke="#00ff88" stroke-width="1" />
+
+  <!-- Main Helm Cranium (Faceted Obsidian) -->
+  <path d="M 40 34 L 60 26 L 80 34 L 92 56 L 88 84 L 60 106 L 32 84 L 28 56 Z" fill="url(#armor-helm)" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" />
+
+  <!-- Left Facet Panel (Emerald Tinge) -->
+  <path d="M 40 34 L 60 26 L 60 62 L 34 58 Z" fill="url(#armor-left)" stroke="#10b981" stroke-width="1" stroke-opacity="0.8" />
+  
+  <!-- Right Facet Panel (Crimson Tinge) -->
+  <path d="M 80 34 L 60 26 L 60 62 L 86 58 Z" fill="url(#armor-right)" stroke="#ef4444" stroke-width="1" stroke-opacity="0.8" />
+
+  <!-- Center Brow / Third Eye Diamond -->
+  <polygon points="60,42 66,50 60,58 54,50" fill="#000000" stroke="#ffffff" stroke-width="1.5" />
+  <circle cx="60" cy="50" r="2.5" fill="#ffffff" filter="url(#glow-blur)" />
+
+  <!-- Left Cybernetic Eye (Emerald Neon) -->
+  <path d="M 38 66 L 54 64 L 52 72 L 36 70 Z" fill="#020617" stroke="#10b981" stroke-width="1.5" />
+  <ellipse cx="45" cy="67" rx="5" ry="3" fill="#00ff88" filter="url(#glow-blur)" />
+  <circle cx="45" cy="67" r="1.5" fill="#ffffff" />
+  <!-- Circuit trace leading from left eye -->
+  <polyline points="36,70 30,76 30,86" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" />
+
+  <!-- Right Cybernetic Eye (Laser Crimson) -->
+  <path d="M 82 66 L 66 64 L 68 72 L 84 70 Z" fill="#020617" stroke="#ef4444" stroke-width="1.5" />
+  <ellipse cx="75" cy="67" rx="5" ry="3" fill="#ff4444" filter="url(#glow-blur)" />
+  <circle cx="75" cy="67" r="1.5" fill="#ffffff" />
+  <!-- Circuit trace leading from right eye -->
+  <polyline points="84,70 90,76 90,86" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" />
+
+  <!-- Lower Jaw / Faceplate Grille (Nordic Mechanical) -->
+  <path d="M 44 80 L 60 76 L 76 80 L 68 98 L 60 102 L 52 98 Z" fill="#050914" stroke="#ffffff" stroke-width="1.2" />
+  <!-- Vertical Grille Slots -->
+  <line x1="56" y1="84" x2="55" y2="92" stroke="#10b981" stroke-width="1.2" stroke-linecap="round" />
+  <line x1="60" y1="83" x2="60" y2="94" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" />
+  <line x1="64" y1="84" x2="65" y2="92" stroke="#ef4444" stroke-width="1.2" stroke-linecap="round" />
+
+  <!-- Temporal Synapse Nodes (Side Cheeks) -->
+  <circle cx="28" cy="56" r="3" fill="#0f172a" stroke="#10b981" stroke-width="1.5" />
+  <circle cx="28" cy="56" r="1" fill="#00ff88" />
+  <circle cx="92" cy="56" r="3" fill="#0f172a" stroke="#ef4444" stroke-width="1.5" />
+  <circle cx="92" cy="56" r="1" fill="#ff4444" />
+</svg>

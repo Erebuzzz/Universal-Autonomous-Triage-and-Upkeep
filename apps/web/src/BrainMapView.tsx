@@ -13,7 +13,6 @@ type BrainNode = BrainMap["nodes"][number];
 type BrainEdge = BrainMap["edges"][number];
 
 type Pt = { x: number; y: number };
-
 type ViewTransform = { x: number; y: number; k: number };
 
 type LayoutTree = {
@@ -21,37 +20,30 @@ type LayoutTree = {
   node: BrainNode;
   children: LayoutTree[];
   depth: number;
-  /** leaf-slot coordinate before scaling */
   slot: number;
 };
 
-const MAX_NODES = 80;
-const MAX_EDGES = 120;
-const VIEW_W = 720;
-const VIEW_H = 460;
-const MIN_ZOOM = 0.45;
-const MAX_ZOOM = 2.8;
-const PAD_X = 36;
-const PAD_Y = 28;
-const DEPTH_GAP = 118;
-const SLOT_GAP = 22;
+const MAX_NODES = 90;
+const MAX_EDGES = 140;
+const MIN_ZOOM = 0.35;
+const MAX_ZOOM = 3.2;
 
 const STRUCTURAL = new Set(["Organization", "Repository", "Directory", "File"]);
 
 const KIND_STROKE: Record<string, string> = {
-  Organization: "#f0f6fc",
-  Repository: "#10b981",
+  Organization: "#ffffff",
+  Repository: "#00ff9d",
   Directory: "#64748b",
-  File: "#94a3b8",
-  Dependency: "#059669",
+  File: "#cbd5e1",
+  Dependency: "#10b981",
   Test: "#38bdf8",
-  Bug: "#ef4444",
-  SecurityFinding: "#f87171",
-  Patch: "#34d399",
+  Bug: "#ff0055",
+  SecurityFinding: "#ff0055",
+  Patch: "#00ff9d",
   VerificationResult: "#00ff88",
-  Observation: "#cbd5e1",
-  Hypothesis: "#e2e8f0",
-  Issue: "#dc2626",
+  Observation: "#94a3b8",
+  Hypothesis: "#a78bfa",
+  Issue: "#ef4444",
 };
 
 const DEFAULT_KINDS = [
@@ -70,8 +62,6 @@ const DEFAULT_KINDS = [
   "VerificationResult",
 ] as const;
 
-const TREE_EDGE_KINDS = new Set(["CONTAINS"]);
-
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -84,7 +74,7 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-function truncate(label: string, max = 28): string {
+function truncate(label: string, max = 26): string {
   return label.length > max ? `${label.slice(0, max - 1)}…` : label;
 }
 
@@ -95,12 +85,12 @@ function kindStroke(kind: string): string {
 function nodeRadius(kind: string, activated: boolean, selected: boolean): number {
   const base =
     kind === "Organization" || kind === "Repository"
-      ? 9
+      ? 11
       : kind === "Directory"
-        ? 6.5
-        : 5;
-  if (selected) return base + 2;
-  if (activated) return base + 1.25;
+        ? 8
+        : 6;
+  if (selected) return base + 3;
+  if (activated) return base + 1.5;
   return base;
 }
 
@@ -145,25 +135,23 @@ function buildParentMap(nodes: BrainNode[], edges: BrainEdge[]): Map<string, str
     const a = byId.get(e.from);
     const b = byId.get(e.to);
     if (!a || !b) continue;
-    // Prefer deeper structural parent later; first pass records
     if (!parent.has(e.to)) parent.set(e.to, e.from);
   }
 
-  // Org → each repo if missing
+  // Org -> repo linking
   if (orgs.length === 1) {
     for (const r of repos) {
       if (!parent.has(r.id)) parent.set(r.id, orgs[0].id);
     }
   }
 
-  // Path-inferred Directory/File nesting (overrides flat repo→file CONTAINS when better parent exists)
+  // Path-inferred Directory/File hierarchy
   const dirsByPath = new Map<string, string>();
   for (const n of nodes) {
     if (n.kind === "Directory") dirsByPath.set(normalizePath(n.label), n.id);
   }
 
   const repoForPathNode = (n: BrainNode): string | undefined => {
-    // Walk existing parent chain to repository
     let cur: string | undefined = parent.get(n.id);
     const seen = new Set<string>();
     while (cur && !seen.has(cur)) {
@@ -172,8 +160,6 @@ function buildParentMap(nodes: BrainNode[], edges: BrainEdge[]): Map<string, str
       if (node?.kind === "Repository") return cur;
       cur = parent.get(cur);
     }
-    // Fallback: single repo, or first repo
-    if (repos.length === 1) return repos[0].id;
     return repos[0]?.id;
   };
 
@@ -197,7 +183,7 @@ function buildParentMap(nodes: BrainNode[], edges: BrainEdge[]): Map<string, str
     }
   }
 
-  // Non-structural: hang under LOCATED_IN / AFFECTS / FIXES / TESTED_BY / DEPENDS_ON target
+  // Attach non-structural findings to code targets
   const attachKinds = new Set([
     "LOCATED_IN",
     "AFFECTS",
@@ -209,6 +195,7 @@ function buildParentMap(nodes: BrainNode[], edges: BrainEdge[]): Map<string, str
     "VERIFIED_BY",
     "CAUSED_BY",
   ]);
+
   for (const e of edges) {
     if (!attachKinds.has(e.kind)) continue;
     const a = byId.get(e.from);
@@ -220,19 +207,15 @@ function buildParentMap(nodes: BrainNode[], edges: BrainEdge[]): Map<string, str
       parent.set(a.id, b.id);
     } else if (!structuralB && structuralA && !parent.has(b.id)) {
       parent.set(b.id, a.id);
-    } else if (!structuralA && !parent.has(a.id) && structuralB) {
-      parent.set(a.id, b.id);
     }
   }
 
-  // Remaining orphans under first repo / org / synthetic root handled later
-  const fallbackRoot = orgs[0]?.id ?? repos[0]?.id;
+  // Attach remaining orphans under primary repo
+  const fallbackRoot = repos[0]?.id ?? orgs[0]?.id;
   if (fallbackRoot) {
     for (const n of nodes) {
       if (n.id === fallbackRoot) continue;
       if (!parent.has(n.id) && n.kind !== "Organization") {
-        // Don't attach other orgs
-        if (n.kind === "Organization") continue;
         parent.set(n.id, fallbackRoot);
       }
     }
@@ -292,8 +275,7 @@ function buildForest(
 
   function make(id: string, depth: number, seen: Set<string>): LayoutTree | null {
     const node = byId.get(id);
-    if (!node) return null;
-    if (seen.has(id)) return null;
+    if (!node || seen.has(id)) return null;
     const next = new Set(seen);
     next.add(id);
 
@@ -310,7 +292,6 @@ function buildForest(
   return { forest, childrenMap: children };
 }
 
-/** Reingold-Tilford style: assign contiguous leaf slots, center parents. */
 function assignSlots(tree: LayoutTree, cursor: { n: number }): void {
   if (!tree.children.length) {
     tree.slot = cursor.n;
@@ -319,6 +300,16 @@ function assignSlots(tree: LayoutTree, cursor: { n: number }): void {
   }
   for (const c of tree.children) assignSlots(c, cursor);
   tree.slot = (tree.children[0].slot + tree.children[tree.children.length - 1].slot) / 2;
+}
+
+function shiftSlots(t: LayoutTree, delta: number): void {
+  t.slot += delta;
+  for (const c of t.children) shiftSlots(c, delta);
+}
+
+function subtreeLeafSpan(t: LayoutTree): number {
+  if (!t.children.length) return 1;
+  return t.children.reduce((s, c) => s + subtreeLeafSpan(c), 0);
 }
 
 function layoutDendrogram(
@@ -333,6 +324,7 @@ function layoutDendrogram(
   parentOf: Map<string, string>;
   childrenMap: Map<string, string[]>;
   placedNodeIds: Set<string>;
+  bounds: { minX: number; minY: number; maxX: number; maxY: number };
 } {
   const positions = new Map<string, Pt>();
   const parentOf = buildParentMap(nodes, edges);
@@ -345,6 +337,7 @@ function layoutDendrogram(
       parentOf,
       childrenMap: new Map(),
       placedNodeIds: new Set(),
+      bounds: { minX: 0, minY: 0, maxX: 800, maxY: 500 },
     };
   }
 
@@ -358,7 +351,7 @@ function layoutDendrogram(
     shiftSlots(root, slotOffset);
     const span = subtreeLeafSpan(root);
     placed.push(root);
-    slotOffset += span + 1.5;
+    slotOffset += span + 1.2;
   }
 
   let maxDepth = 0;
@@ -371,44 +364,63 @@ function layoutDendrogram(
   for (const r of placed) walk(r);
 
   const leafCount = Math.max(1, Math.ceil(maxSlot + 1));
-  const usableW = VIEW_W - PAD_X * 2;
-  const usableH = VIEW_H - PAD_Y * 2;
-  const dx = Math.min(DEPTH_GAP, maxDepth > 0 ? usableW / maxDepth : usableW);
-  const dy = Math.min(SLOT_GAP, leafCount > 1 ? usableH / Math.max(1, leafCount - 1) : usableH / 2);
+  // Dynamic biological node spacing: generous spacing so tree spans canvas
+  const depthSpacing = Math.max(160, Math.min(240, 780 / Math.max(1, maxDepth)));
+  const slotSpacing = Math.max(48, Math.min(68, 520 / Math.max(1, leafCount)));
 
+  const padX = 60;
+  const padY = 50;
   const treeEdges: Array<{ from: string; to: string }> = [];
   const placedNodeIds = new Set<string>();
 
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
   const place = (t: LayoutTree) => {
-    const x = PAD_X + t.depth * dx;
-    const y = PAD_Y + t.slot * dy;
+    const x = padX + t.depth * depthSpacing;
+    const y = padY + t.slot * slotSpacing;
     positions.set(t.id, { x, y });
     placedNodeIds.add(t.id);
+
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+
     for (const c of t.children) {
       treeEdges.push({ from: t.id, to: c.id });
       place(c);
     }
   };
+
   for (const r of placed) place(r);
 
   for (const r of forest) {
     if (!positions.has(r.id)) {
-      positions.set(r.id, { x: PAD_X, y: PAD_Y });
+      positions.set(r.id, { x: padX, y: padY });
       placedNodeIds.add(r.id);
     }
   }
 
-  return { positions, treeEdges, maxDepth, leafCount, parentOf, childrenMap, placedNodeIds };
-}
+  if (minX === Infinity) {
+    minX = 0;
+    minY = 0;
+    maxX = 800;
+    maxY = 500;
+  }
 
-function shiftSlots(t: LayoutTree, delta: number): void {
-  t.slot += delta;
-  for (const c of t.children) shiftSlots(c, delta);
-}
-
-function subtreeLeafSpan(t: LayoutTree): number {
-  if (!t.children.length) return 1;
-  return t.children.reduce((s, c) => s + subtreeLeafSpan(c), 0);
+  return {
+    positions,
+    treeEdges,
+    maxDepth,
+    leafCount,
+    parentOf,
+    childrenMap,
+    placedNodeIds,
+    bounds: { minX, minY, maxX, maxY },
+  };
 }
 
 function pickVisible(nodes: BrainNode[], kinds: Set<string>): BrainNode[] {
@@ -416,18 +428,14 @@ function pickVisible(nodes: BrainNode[], kinds: Set<string>): BrainNode[] {
   if (filtered.length <= MAX_NODES) return filtered;
 
   const hubs = filtered.filter((n) => n.kind === "Repository" || n.kind === "Organization");
-  const dirs = filtered
-    .filter((n) => n.kind === "Directory")
-    .sort((a, b) => a.label.length - b.label.length);
+  const dirs = filtered.filter((n) => n.kind === "Directory");
   const rest = filtered
     .filter((n) => !hubs.includes(n) && n.kind !== "Directory")
     .sort((a, b) => b.confidence - a.confidence);
 
-  const out: BrainNode[] = [...hubs];
-  const budget = MAX_NODES - hubs.length;
-  const dirBudget = Math.min(dirs.length, Math.floor(budget * 0.35));
-  out.push(...dirs.slice(0, dirBudget));
-  out.push(...rest.slice(0, Math.max(0, MAX_NODES - out.length)));
+  const out: BrainNode[] = [...hubs, ...dirs];
+  const budget = Math.max(0, MAX_NODES - out.length);
+  out.push(...rest.slice(0, budget));
   return out;
 }
 
@@ -457,9 +465,11 @@ function clientToSvg(svg: SVGSVGElement, clientX: number, clientY: number): Pt {
   return { x: local.x, y: local.y };
 }
 
-function elbowPath(a: Pt, b: Pt): string {
-  const midX = (a.x + b.x) / 2;
-  return `M ${a.x} ${a.y} H ${midX} V ${b.y} H ${b.x}`;
+/** Smooth organic cubic Bézier curve for biological axon pathways */
+function organicAxonPath(a: Pt, b: Pt): string {
+  const dx = b.x - a.x;
+  const curvature = Math.max(28, dx * 0.52);
+  return `M ${a.x} ${a.y} C ${a.x + curvature} ${a.y}, ${b.x - curvature} ${b.y}, ${b.x} ${b.y}`;
 }
 
 export function BrainMapView({ brain }: { brain: BrainMap }) {
@@ -487,10 +497,14 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
   const safeEdges = Array.isArray(brain?.edges) ? brain.edges : [];
   const safeActivatedIds = Array.isArray(brain?.activatedIds) ? brain.activatedIds : [];
 
+  // Start with root repositories and directories expanded by default
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
     const initial = new Set<string>();
     for (const n of safeNodes) {
-      if (n.kind === "Organization" || n.kind === "Repository" || n.kind === "Directory") {
+      if (n.kind === "Organization" || n.kind === "Repository") {
+        initial.add(n.id);
+      }
+      if (n.kind === "Directory" && !n.label.includes("/")) {
         initial.add(n.id);
       }
     }
@@ -503,7 +517,10 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
         if (prev.size > 0) return prev;
         const next = new Set<string>();
         for (const n of safeNodes) {
-          if (n.kind === "Organization" || n.kind === "Repository" || n.kind === "Directory") {
+          if (n.kind === "Organization" || n.kind === "Repository") {
+            next.add(n.id);
+          }
+          if (n.kind === "Directory" && !n.label.includes("/")) {
             next.add(n.id);
           }
         }
@@ -528,9 +545,15 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     () => layoutDendrogram(visible, safeEdges, expandedIds),
     [visible, safeEdges, expandedIds],
   );
+
   const positions = layout.positions;
   const childrenMap = layout.childrenMap;
   const placedNodeIds = layout.placedNodeIds;
+  const bounds = layout.bounds;
+
+  // ViewBox encompasses the dynamic tree bounds with comfortable biological padding
+  const viewW = Math.max(860, bounds.maxX + 180);
+  const viewH = Math.max(520, bounds.maxY + 100);
 
   const renderedNodes = useMemo(
     () => visible.filter((n) => placedNodeIds.has(n.id)),
@@ -548,7 +571,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     if (list.length <= MAX_EDGES) return list;
     const score = (e: BrainEdge) => {
       let s = e.confidence;
-      if (TREE_EDGE_KINDS.has(e.kind) || treeEdgeSet.has(`${e.from}->${e.to}`)) s += 4;
+      if (treeEdgeSet.has(`${e.from}->${e.to}`)) s += 4;
       if (activated.has(e.from) || activated.has(e.to)) s += 2;
       if (selectedId && (e.from === selectedId || e.to === selectedId)) s += 3;
       return s;
@@ -615,6 +638,81 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     setTransform({ x: 0, y: 0, k: 1 });
   }, [safeNodes]);
 
+  /** Direct Synaptic Gateway toggle: unconditionally expands or collapses branch and animates camera */
+  const toggleSynapticBranch = useCallback(
+    (id: string, ev?: React.MouseEvent | React.KeyboardEvent) => {
+      if (ev) {
+        ev.stopPropagation();
+      }
+
+      const isCurrentlyExpanded = expandedIds.has(id);
+
+      if (!isCurrentlyExpanded) {
+        // Expand branch
+        setExpandedIds((prev) => {
+          const next = new Set(prev);
+          next.add(id);
+          return next;
+        });
+        setFocusedBranchId(id);
+        setSelectedId(id);
+
+        // Smoothly zoom camera to focus on this soma and its upcoming children
+        const p = positions.get(id);
+        if (p) {
+          const targetK = 1.45;
+          const targetX = viewW / 2 - (p.x + 80) * targetK;
+          const targetY = viewH / 2 - p.y * targetK;
+          setTransform({ x: targetX, y: targetY, k: targetK });
+        }
+      } else {
+        // Collapse branch
+        setExpandedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+
+        const parentId = layout.parentOf.get(id);
+        if (parentId && positions.has(parentId)) {
+          setFocusedBranchId(parentId);
+          setSelectedId(parentId);
+          const pp = positions.get(parentId)!;
+          const targetK = 1.15;
+          setTransform({
+            x: viewW / 2 - pp.x * targetK,
+            y: viewH / 2 - pp.y * targetK,
+            k: targetK,
+          });
+        } else {
+          setFocusedBranchId(null);
+          setTransform({ x: 0, y: 0, k: 1 });
+        }
+      }
+    },
+    [expandedIds, positions, layout.parentOf, viewW, viewH],
+  );
+
+  /** Clicking the soma node body selects/inspects node and focuses connected pathways */
+  const onSomaActivate = useCallback(
+    (id: string, clientX: number, clientY: number) => {
+      setSelectedId((prev) => (prev === id ? null : id));
+      const rect = shellRef.current?.getBoundingClientRect();
+      if (rect && clientX && clientY) {
+        setTooltip({ x: clientX - rect.left, y: clientY - rect.top });
+      }
+
+      const kids = childrenMap.get(id) ?? [];
+      if (kids.length > 0) {
+        // If unexpanded, also trigger branch expansion
+        if (!expandedIds.has(id)) {
+          toggleSynapticBranch(id);
+        }
+      }
+    },
+    [childrenMap, expandedIds, toggleSynapticBranch],
+  );
+
   const onWheel = useCallback((e: ReactWheelEvent) => {
     e.preventDefault();
     const svg = svgRef.current;
@@ -673,57 +771,6 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     }
   }, []);
 
-  const onNeuronActivate = useCallback((id: string, clientX: number, clientY: number) => {
-    setSelectedId((prev) => (prev === id ? null : id));
-    const rect = shellRef.current?.getBoundingClientRect();
-    if (rect && clientX && clientY) {
-      setTooltip({ x: clientX - rect.left, y: clientY - rect.top });
-    }
-
-    const kids = childrenMap.get(id) ?? [];
-    const hasKids = kids.length > 0;
-    if (hasKids) {
-      const isExpanded = expandedIds.has(id);
-      if (!isExpanded) {
-        // Expand branch and smoothly zoom camera in
-        setExpandedIds((prev) => new Set([...prev, id]));
-        setFocusedBranchId(id);
-        const p = positions.get(id);
-        if (p) {
-          const targetK = 1.7;
-          const targetX = VIEW_W / 2 - p.x * targetK;
-          const targetY = VIEW_H / 2 - p.y * targetK;
-          setTransform({ x: targetX, y: targetY, k: targetK });
-        }
-      } else if (focusedBranchId === id) {
-        // Collapse branch and zoom back out to parent
-        setExpandedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
-        const parentId = layout.parentOf.get(id);
-        if (parentId && positions.has(parentId)) {
-          setFocusedBranchId(parentId);
-          const pp = positions.get(parentId)!;
-          const targetK = 1.3;
-          setTransform({ x: VIEW_W / 2 - pp.x * targetK, y: VIEW_H / 2 - pp.y * targetK, k: targetK });
-        } else {
-          setFocusedBranchId(null);
-          setTransform({ x: 0, y: 0, k: 1 });
-        }
-      } else {
-        // Focus camera on this branch
-        setFocusedBranchId(id);
-        const p = positions.get(id);
-        if (p) {
-          const targetK = 1.7;
-          setTransform({ x: VIEW_W / 2 - p.x * targetK, y: VIEW_H / 2 - p.y * targetK, k: targetK });
-        }
-      }
-    }
-  }, [childrenMap, expandedIds, focusedBranchId, positions, layout.parentOf]);
-
   const breadcrumbs = useMemo(() => {
     const targetId = focusedBranchId || selectedId;
     if (!targetId) return [];
@@ -741,34 +788,38 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     return trail;
   }, [focusedBranchId, selectedId, byId, layout.parentOf]);
 
-  const jumpToCrumb = useCallback((id: string | null) => {
-    if (!id) {
-      setFocusedBranchId(null);
-      setSelectedId(null);
-      setTransform({ x: 0, y: 0, k: 1 });
-      return;
-    }
-    setFocusedBranchId(id);
-    setSelectedId(id);
-    const p = positions.get(id);
-    if (p) {
-      const targetK = 1.6;
-      setTransform({ x: VIEW_W / 2 - p.x * targetK, y: VIEW_H / 2 - p.y * targetK, k: targetK });
-    }
-  }, [positions]);
+  const jumpToCrumb = useCallback(
+    (id: string | null) => {
+      if (!id) {
+        setFocusedBranchId(null);
+        setSelectedId(null);
+        setTransform({ x: 0, y: 0, k: 1 });
+        return;
+      }
+      setFocusedBranchId(id);
+      setSelectedId(id);
+      const p = positions.get(id);
+      if (p) {
+        const targetK = 1.4;
+        setTransform({ x: viewW / 2 - p.x * targetK, y: viewH / 2 - p.y * targetK, k: targetK });
+      }
+    },
+    [positions, viewW, viewH],
+  );
 
-  const zoomBy = useCallback((factor: number) => {
-    setTransform((t) => {
-      const nextK = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, t.k * factor));
-      const cx = VIEW_W / 2;
-      const cy = VIEW_H / 2;
-      const wx = (cx - t.x) / t.k;
-      const wy = (cy - t.y) / t.k;
-      return { k: nextK, x: cx - wx * nextK, y: cy - wy * nextK };
-    });
-  }, []);
-
-  const clampedShown = safeNodes.length > renderedNodes.length;
+  const zoomBy = useCallback(
+    (factor: number) => {
+      setTransform((t) => {
+        const nextK = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, t.k * factor));
+        const cx = viewW / 2;
+        const cy = viewH / 2;
+        const wx = (cx - t.x) / t.k;
+        const wy = (cy - t.y) / t.k;
+        return { k: nextK, x: cx - wx * nextK, y: cy - wy * nextK };
+      });
+    },
+    [viewW, viewH],
+  );
 
   const treeLinks = layout.treeEdges.filter(
     (e) => placedNodeIds.has(e.from) && placedNodeIds.has(e.to),
@@ -811,17 +862,27 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
             ))}
           </div>
           <div className="brain-zoom-controls">
-            <button type="button" className="brain-zoom-btn" onClick={expandAllBranches} title="Expand all branches">
+            <button
+              type="button"
+              className="brain-zoom-btn"
+              onClick={expandAllBranches}
+              title="Expand all branches"
+            >
               Expand All
             </button>
-            <button type="button" className="brain-zoom-btn" onClick={collapseAllBranches} title="Collapse to roots">
+            <button
+              type="button"
+              className="brain-zoom-btn"
+              onClick={collapseAllBranches}
+              title="Collapse to roots"
+            >
               Collapse All
             </button>
           </div>
         </div>
       ) : null}
 
-      <div className="brain-map-toolbar" role="toolbar" aria-label="Brain map filters and view">
+      <div className="brain-map-toolbar" role="toolbar" aria-label="Brain map filters and controls">
         <div className="brain-map-filters" role="group" aria-label="Filter neuron kinds">
           {(presentKinds.length ? presentKinds : ["Repository", "File", "Dependency"]).map((kind) => {
             const on = filterKinds.has(kind);
@@ -843,10 +904,10 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
           </button>
         </div>
         <div className="brain-map-controls">
-          <button type="button" className="brain-ctrl" aria-label="Zoom in" onClick={() => zoomBy(1.15)}>
+          <button type="button" className="brain-ctrl" aria-label="Zoom in" onClick={() => zoomBy(1.2)}>
             +
           </button>
-          <button type="button" className="brain-ctrl" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.15)}>
+          <button type="button" className="brain-ctrl" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.2)}>
             −
           </button>
           <button type="button" className="brain-ctrl brain-ctrl-wide" onClick={resetView}>
@@ -865,29 +926,41 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
         onPointerCancel={onPointerUp}
         onDoubleClick={resetView}
         role="application"
-        aria-label="Hierarchical neural repository map. Click branch to expand and zoom, drag to pan, scroll to zoom."
+        aria-label="Biological neural repository map. Click the Synaptic Gateway (+/-) to expand or collapse branches. Click soma to inspect."
       >
         <svg
           ref={svgRef}
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+          viewBox={`0 0 ${viewW} ${viewH}`}
           preserveAspectRatio="xMidYMid meet"
           className="brain-svg"
         >
           <defs>
-            <radialGradient id="brain-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(16, 185, 129, 0.28)" />
-              <stop offset="100%" stopColor="rgba(16, 185, 129, 0)" />
+            <radialGradient id="bio-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(0, 255, 157, 0.35)" />
+              <stop offset="60%" stopColor="rgba(0, 255, 157, 0.12)" />
+              <stop offset="100%" stopColor="rgba(0, 255, 157, 0)" />
             </radialGradient>
-            <filter id="brain-soft" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="1.1" result="b" />
+            <radialGradient id="ruby-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(255, 0, 85, 0.35)" />
+              <stop offset="100%" stopColor="rgba(255, 0, 85, 0)" />
+            </radialGradient>
+            <filter id="bio-soft" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
               <feMerge>
-                <feMergeNode in="b" />
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="bio-pulse-glow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
           </defs>
 
-          <rect width={VIEW_W} height={VIEW_H} fill="transparent" />
+          <rect width={viewW} height={viewH} fill="transparent" />
 
           <g
             className="brain-world"
@@ -897,6 +970,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
               transformOrigin: "center center",
             }}
           >
+            {/* Primary Hub Auric Halos */}
             {renderedNodes
               .filter((n) => n.kind === "Repository" || n.kind === "Organization")
               .map((n) => {
@@ -908,12 +982,13 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                     className="neuron-aura"
                     cx={p.x}
                     cy={p.y}
-                    r={24}
-                    fill="url(#brain-glow)"
+                    r={32}
+                    fill="url(#bio-glow)"
                   />
                 );
               })}
 
+            {/* Organic Bézier Axon Pathways */}
             {treeLinks.map((e, i) => {
               const a = positions.get(e.from);
               const b = positions.get(e.to);
@@ -923,20 +998,40 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                 activated.has(e.to) ||
                 (selectedId != null && (e.from === selectedId || e.to === selectedId));
               const dimmed = selectedId != null && !focus.has(e.from) && !focus.has(e.to);
+              const pathD = organicAxonPath(a, b);
+              const pathId = `axon-${e.from}-${e.to}`;
+
               return (
-                <path
-                  key={`tree-${e.from}-${e.to}`}
-                  className={`synapse synapse-tree ${hot ? "hot" : ""} ${dimmed ? "dimmed" : ""}`}
-                  d={elbowPath(a, b)}
-                  style={
-                    reducedMotion
-                      ? undefined
-                      : { transitionDelay: `${Math.min(i, 48) * 10}ms` }
-                  }
-                />
+                <g key={`tree-axon-${e.from}-${e.to}`}>
+                  <path
+                    id={pathId}
+                    className={`synapse bio-axon-path ${hot ? "hot" : ""} ${dimmed ? "dimmed" : ""}`}
+                    d={pathD}
+                    style={
+                      reducedMotion
+                        ? undefined
+                        : { transitionDelay: `${Math.min(i, 40) * 8}ms` }
+                    }
+                  />
+
+                  {/* Animated Action Potential Impulse along active axons */}
+                  {!reducedMotion && hot ? (
+                    <circle r={2.5} className="bio-axon-action-potential" filter="url(#bio-soft)">
+                      <animateMotion
+                        dur="2.4s"
+                        repeatCount="indefinite"
+                        path={pathD}
+                        keyPoints="0;1"
+                        keyTimes="0;1"
+                        begin={`${(i % 5) * 0.4}s`}
+                      />
+                    </circle>
+                  ) : null}
+                </g>
               );
             })}
 
+            {/* Cross-Cutting Secondary Synapses (Dependencies, Bug Affects, Fixes) */}
             {secondaryLinks.map((e) => {
               const a = positions.get(e.from);
               const b = positions.get(e.to);
@@ -953,6 +1048,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
               );
             })}
 
+            {/* Biological Neuron Somas & Synaptic Gateways */}
             {renderedNodes.map((n, i) => {
               const p = positions.get(n.id);
               if (!p) return null;
@@ -962,7 +1058,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
               const dimmed = selectedId != null && !isNeighbor;
               const isHover = hoverId === n.id;
               const r = nodeRadius(n.kind, isActivated, isSelected);
-              const showLabel = isSelected || isHover;
+              const showLabel = isSelected || isHover || n.kind === "Repository" || n.kind === "Directory";
 
               const kids = childrenMap.get(n.id) ?? [];
               const hasKids = kids.length > 0;
@@ -983,66 +1079,108 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  style={reducedMotion ? undefined : { transitionDelay: `${Math.min(i, 48) * 14}ms` }}
+                  style={reducedMotion ? undefined : { transitionDelay: `${Math.min(i, 40) * 10}ms` }}
                   transform={`translate(${p.x}, ${p.y})`}
-                  onPointerEnter={(ev) => {
-                    setHoverId(n.id);
-                    const rect = shellRef.current?.getBoundingClientRect();
-                    if (rect) setTooltip({ x: ev.clientX - rect.left, y: ev.clientY - rect.top });
-                  }}
-                  onPointerLeave={() => {
-                    setHoverId((h) => (h === n.id ? null : h));
-                  }}
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    onNeuronActivate(n.id, ev.clientX, ev.clientY);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${n.kind}: ${n.label}, confidence ${Math.round(n.confidence * 100)}%`}
-                  aria-pressed={isSelected}
-                  onKeyDown={(ev) => {
-                    if (ev.key === "Enter" || ev.key === " ") {
-                      ev.preventDefault();
-                      onNeuronActivate(n.id, 0, 0);
-                    }
-                  }}
                 >
+                  {/* Outer Pulsing Synaptic Membrane */}
                   {isSelected || isActivated ? (
-                    <circle className="neuron-pulse-ring" r={r + 5} />
+                    <circle className="neuron-pulse-ring" r={r + 6} />
                   ) : null}
+
+                  {/* Soma Cell Body (Membrane) */}
                   <circle
-                    className="neuron-node"
+                    className="neuron-node bio-soma-membrane"
                     r={r}
-                    style={{ stroke: kindStroke(n.kind) }}
-                    filter={isSelected || isHover ? "url(#brain-soft)" : undefined}
+                    style={{ stroke: kindStroke(n.kind), strokeWidth: isSelected ? 2.5 : 1.8 }}
+                    filter={isSelected || isHover ? "url(#bio-soft)" : undefined}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      onSomaActivate(n.id, ev.clientX, ev.clientY);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${n.kind}: ${n.label}, confidence ${Math.round(n.confidence * 100)}%`}
+                    onKeyDown={(ev) => {
+                      if (ev.key === "Enter" || ev.key === " ") {
+                        ev.preventDefault();
+                        onSomaActivate(n.id, 0, 0);
+                      }
+                    }}
+                    onPointerEnter={(ev) => {
+                      setHoverId(n.id);
+                      const rect = shellRef.current?.getBoundingClientRect();
+                      if (rect) setTooltip({ x: ev.clientX - rect.left, y: ev.clientY - rect.top });
+                    }}
+                    onPointerLeave={() => {
+                      setHoverId((h) => (h === n.id ? null : h));
+                    }}
                   />
 
-                  {/* Branch expansion indicator (+ / -) */}
+                  {/* Inner Glowing Nucleus */}
+                  <circle
+                    className="bio-soma-nucleus"
+                    r={Math.max(2.2, r * 0.38)}
+                    fill={kindStroke(n.kind)}
+                  />
+
+                  {/* Dedicated Synaptic Gateway Badge (+ / - expansion button) */}
                   {hasKids ? (
-                    <g className="brain-expand-badge" transform={`translate(${r + 5}, -5)`}>
+                    <g
+                      className="synaptic-gateway-badge"
+                      transform={`translate(${r + 8}, 0)`}
+                      onClick={(ev) => toggleSynapticBranch(n.id, ev)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={isExpanded ? `Collapse ${n.label} branch` : `Expand ${n.label} branch`}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") {
+                          toggleSynapticBranch(n.id, ev);
+                        }
+                      }}
+                    >
+                      {/* Synaptic Gateway Hitbox / Circle */}
                       <circle
-                        r={5.5}
-                        fill={isExpanded ? "var(--ruby)" : "var(--signal)"}
-                        stroke="#000000"
-                        strokeWidth={1}
+                        r={9}
+                        fill={isExpanded ? "#030708" : "#00ff9d"}
+                        stroke={isExpanded ? "#ff0055" : "#030708"}
+                        strokeWidth={1.5}
+                        filter="url(#bio-soft)"
                       />
-                      <text
-                        x={0}
-                        y={3}
-                        textAnchor="middle"
-                        fill="#ffffff"
-                        fontSize={8}
-                        fontWeight="bold"
-                        fontFamily="var(--font-mono)"
-                      >
-                        {isExpanded ? "-" : "+"}
-                      </text>
+                      {/* Plus or Minus Icon */}
+                      {isExpanded ? (
+                        // Minus
+                        <line
+                          x1={-4}
+                          y1={0}
+                          x2={4}
+                          y2={0}
+                          stroke="#ff0055"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                        />
+                      ) : (
+                        // Plus
+                        <g stroke="#030708" strokeWidth={2} strokeLinecap="round">
+                          <line x1={-4} y1={0} x2={4} y2={0} />
+                          <line x1={0} y1={-4} x2={0} y2={4} />
+                        </g>
+                      )}
                     </g>
                   ) : null}
 
+                  {/* Biological Dendrite Branch Label */}
                   {showLabel ? (
-                    <text className="neuron-label" x={r + (hasKids ? 14 : 7)} y={3}>
+                    <text
+                      className="neuron-label"
+                      x={r + (hasKids ? 24 : 10)}
+                      y={4}
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.78rem",
+                        letterSpacing: "0.02em",
+                        fontWeight: isSelected ? 600 : 500,
+                      }}
+                    >
                       {truncate(shortLabel(n), 28)}
                     </text>
                   ) : null}
@@ -1056,7 +1194,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
           <div
             className="brain-tooltip"
             style={{
-              left: Math.min(tooltip.x + 14, (shellRef.current?.clientWidth ?? 320) - 180),
+              left: Math.min(tooltip.x + 14, (shellRef.current?.clientWidth ?? 320) - 200),
               top: Math.max(8, tooltip.y - 12),
             }}
             role="status"
@@ -1064,17 +1202,22 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
             {(() => {
               const n = hoverNode ?? selectedNode!;
               const kids = childrenMap.get(n.id) ?? [];
+              const isExpanded = expandedIds.has(n.id);
               return (
                 <>
                   <div className="brain-tooltip-kind" style={{ color: kindStroke(n.kind) }}>
                     {n.kind}
-                    {activated.has(n.id) ? " · live" : ""}
-                    {kids.length > 0 ? ` · ${kids.length} branches` : ""}
+                    {activated.has(n.id) ? " · active impulse" : ""}
+                    {kids.length > 0 ? ` · ${kids.length} sub-branches` : ""}
                   </div>
                   <div className="brain-tooltip-title">{n.label}</div>
                   <div className="brain-tooltip-meta">
-                    conf {(n.confidence * 100).toFixed(0)}% · {n.status.toLowerCase()}
-                    {kids.length > 0 ? " (click to zoom)" : ""}
+                    confidence {(n.confidence * 100).toFixed(0)}% · {n.status.toLowerCase()}
+                    {kids.length > 0
+                      ? isExpanded
+                        ? " (click badge to collapse)"
+                        : " (click badge to expand & zoom)"
+                      : ""}
                   </div>
                 </>
               );
@@ -1085,8 +1228,8 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
 
       <div className="brain-map-footer">
         <span className="brain-map-meta">
-          {renderedNodes.length}/{safeNodes.length} neurons · tree depth {layout.maxDepth}
-          {clampedShown ? " · expandable branches" : ""}
+          {renderedNodes.length}/{safeNodes.length} neurons active · tree depth {layout.maxDepth}
+          {" · organic synaptic tree"}
         </span>
         {selectedNode ? (
           <span className="brain-map-focus">
@@ -1096,7 +1239,9 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
               : `${Math.max(0, focus.size - 1)} neighbors`}
           </span>
         ) : (
-          <span className="brain-map-hint">Click a branch to expand & zoom · Double-click canvas to fit</span>
+          <span className="brain-map-hint">
+            Click Synaptic Gateway (+/-) to expand/collapse and zoom · Drag to pan · Scroll to zoom
+          </span>
         )}
       </div>
     </div>

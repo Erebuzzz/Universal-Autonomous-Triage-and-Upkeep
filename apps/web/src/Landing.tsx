@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { api, flags } from "./api";
 import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
+import { FlipCard } from "./components/FlipCard";
+import { LatticeLoader } from "./components/LatticeLoader";
+import { SpecularButton } from "./components/SpecularButton";
+import { Logo } from "./Logo";
 import { navigate } from "./path";
 import { PrivacyModal } from "./PrivacyModal";
 import { ThemeToggle } from "./ThemeToggle";
@@ -20,7 +24,7 @@ const TELEMETRY_STEPS = [
     idx: "01",
     phase: "OBSERVE",
     model: "Local AST",
-    name: "Repository Tree Ingestion",
+    name: "Repository Ingestion",
     detail: "Scanned 15 files, package dependencies, and ISSUES.json context.",
   },
   {
@@ -34,7 +38,7 @@ const TELEMETRY_STEPS = [
     idx: "03",
     phase: "INVESTIGATE",
     model: "Nova 2 Omni",
-    name: "Root-Cause Synthesis",
+    name: "Root-Cause Isolation",
     detail: "Determined upper bound loop logic (i < end) excludes target bound.",
   },
   {
@@ -85,9 +89,12 @@ export function Landing({
 
       <header className="landing-nav">
         <div className="brand brand-header-group">
-          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+          <Logo size={36} />
           <div className="brand-text">
-            <div className="brand-mark">UATU</div>
+            <div className="brand-mark">
+              <span className="brand-duotone-ua">UA</span>
+              <span className="brand-duotone-tu">TU</span>
+            </div>
             <div className="brand-tag">Universal Autonomous Triage &amp; Upkeep</div>
           </div>
         </div>
@@ -96,14 +103,24 @@ export function Landing({
           <a
             href="#how-it-works"
             className="landing-foot-nav"
-            style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", fontFamily: "var(--font-mono)" }}
+            style={{
+              color: "var(--text-dim)",
+              textDecoration: "none",
+              fontSize: "0.85rem",
+              fontFamily: "var(--font-mono)",
+            }}
           >
             How It Works
           </a>
           <a
             href="#neural-brain"
             className="landing-foot-nav"
-            style={{ color: "var(--text-dim)", textDecoration: "none", fontSize: "0.85rem", fontFamily: "var(--font-mono)" }}
+            style={{
+              color: "var(--text-dim)",
+              textDecoration: "none",
+              fontSize: "0.85rem",
+              fontFamily: "var(--font-mono)",
+            }}
           >
             Neural Brain
           </a>
@@ -133,33 +150,57 @@ export function Landing({
             UATU Autonomous Upkeep Active · ap-south-1
           </div>
 
-          <h1 className="landing-brand">Autonomous Codebase Triage.</h1>
+          <h1 className="landing-brand">
+            Autonomous Codebase Triage with{" "}
+            <span className="brand-duotone-ua">UA</span>
+            <span className="brand-duotone-tu">TU</span>
+          </h1>
           <p className="landing-tagline">Observe · Understand · Repair · Contribute</p>
 
           <p className="landing-lede">
-            UATU continuously monitors your software repositories, maps a living neural memory of your
-            architecture, isolates bugs and CVE security advisories, and synthesizes minimal, regression-tested
-            pull requests you can review and merge with total confidence.
+            UATU continuously monitors your repositories, maps an organic biological neural tree of your
+            architecture, isolates bugs and CVE advisories, and synthesizes minimal, regression-tested
+            pull requests you review with total merge confidence.
           </p>
 
-          <div className="landing-cta">
+          <div className="landing-cta" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
             {canOAuth ? (
-              <a className="btn btn-primary btn-lg" href={api.githubLoginUrl()} style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                </svg>
-                <span>Sign in with GitHub</span>
-              </a>
-            ) : (
-              <button
-                className="btn btn-primary btn-lg"
-                type="button"
+              <SpecularButton
+                onClick={() => {
+                  window.location.href = api.githubLoginUrl();
+                }}
+                tint="#00ff9d"
+                lineColor="#ffffff"
+                baseColor="#10b981"
+                intensity={1.3}
+                size="lg"
                 disabled={busy}
-                onClick={onMockSignIn}
               >
-                {flags.mockAuth ? "Enter with mock session" : "Continue with local demo"}
-              </button>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                    />
+                  </svg>
+                  <span>Sign in with GitHub</span>
+                </span>
+              </SpecularButton>
+            ) : (
+              <SpecularButton
+                onClick={onMockSignIn}
+                tint="#00ff9d"
+                lineColor="#ffffff"
+                baseColor="#10b981"
+                intensity={1.2}
+                size="lg"
+                disabled={busy}
+              >
+                <span>{flags.mockAuth ? "Enter with Mock Session" : "Continue with Demo"}</span>
+              </SpecularButton>
             )}
+
             {canOAuth && !authRequired && (
               <button
                 className="btn btn-ghost btn-lg"
@@ -168,25 +209,52 @@ export function Landing({
                 onClick={onLocalDemo}
                 style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <polyline points="4 17 10 11 4 5" />
                   <line x1="12" y1="19" x2="20" y2="19" />
                 </svg>
                 <span>Local Fixture Demo</span>
               </button>
             )}
+
             {showMock && canOAuth && (
-              <button className="btn btn-ghost btn-lg" type="button" disabled={busy} onClick={onMockSignIn}>
+              <button
+                className="btn btn-ghost btn-lg"
+                type="button"
+                disabled={busy}
+                onClick={onMockSignIn}
+              >
                 Mock Session
               </button>
             )}
+
             <button
               className="btn btn-ghost btn-lg"
               type="button"
               onClick={() => navigate("/docs")}
               style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
               </svg>
@@ -196,12 +264,12 @@ export function Landing({
 
           {healthError && (
             <p className="landing-health-warn" role="status">
-              API unreachable: {healthError}. You can still test all UI flows via the instant local demo.
+              API unreachable: {healthError}. You can test all UI flows via the instant local demo.
             </p>
           )}
         </div>
 
-        {/* Interactive Telemetry Preview (Right Hero Column) */}
+        {/* Interactive Telemetry Preview with LatticeLoader */}
         <div className="telemetry-card" aria-label="Simulated autonomous triage telemetry">
           <div className="telemetry-header">
             <div className="terminal-dots">
@@ -210,7 +278,13 @@ export function Landing({
               <span className="terminal-dot green" />
             </div>
             <span className="telemetry-title">Autonomous Triage Telemetry</span>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+              <LatticeLoader
+                status={isPaused ? "done" : "working"}
+                pattern="orbit"
+                grid={3}
+                color="#00ff9d"
+              />
               <button
                 type="button"
                 className="brain-zoom-btn"
@@ -218,7 +292,7 @@ export function Landing({
                 onClick={() => setIsPaused((p) => !p)}
                 title={isPaused ? "Resume simulation" : "Pause simulation"}
               >
-                {isPaused ? "▶ Play" : "⏸ Pause"}
+                {isPaused ? "Play" : "Pause"}
               </button>
               <button
                 type="button"
@@ -227,9 +301,8 @@ export function Landing({
                 onClick={() => setActiveStep((prev) => (prev + 1) % TELEMETRY_STEPS.length)}
                 title="Step forward"
               >
-                Step ↷
+                Step
               </button>
-              <span className="telemetry-badge">LIVE SIM</span>
             </div>
           </div>
 
@@ -257,70 +330,169 @@ export function Landing({
 
           <div className="telemetry-footer">
             <span>TARGET: demo-vulnerable (sandbox)</span>
-            <span style={{ color: "var(--signal-soft)" }}>PASSED (2/2 CHECKS)</span>
+            <span style={{ color: "var(--signal-bright)" }}>PASSED (2/2 CHECKS)</span>
           </div>
         </div>
       </main>
 
-      {/* How It Works Section */}
+      {/* How It Works Section with 3D Glowing FlipCards */}
       <section id="how-it-works" className="landing-section">
         <div className="section-eyebrow">The Upkeep Lifecycle</div>
         <h2 className="section-heading">How UATU Keeps Repositories Healthy</h2>
         <p className="section-sub">
-          Every triage run follows a disciplined engineering lifecycle. Zero code is modified without an isolated sandbox
-          and verification passes.
+          Every triage run follows a disciplined engineering lifecycle. Zero code is modified without an isolated
+          sandbox and verification pass. Click or tilt any card to explore architectural specifications.
         </p>
 
-        <div className="feature-cards-grid">
-          <div className="feature-card">
-            <span className="feature-idx">01</span>
-            <h3>Connect &amp; Scope</h3>
-            <p>
-              Link target repositories through fine-grained GitHub OAuth and App permissions. Repositories start in a passive,
-              read-only inspection state.
-            </p>
-            <span className="feature-tag">Passive by Default</span>
-          </div>
+        <div className="feature-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem" }}>
+          <FlipCard
+            height={260}
+            tilt={true}
+            glare={true}
+            glareOpacity={0.25}
+            radius={18}
+            front={
+              <div className="feature-card" style={{ height: "100%", margin: 0 }}>
+                <span className="feature-idx">01</span>
+                <h3>Connect &amp; Scope</h3>
+                <p>
+                  Link target repositories through fine-grained GitHub App permissions. Repositories start in a passive,
+                  read-only inspection state.
+                </p>
+                <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="feature-tag">Passive by Default</span>
+                  <span style={{ fontSize: "0.72rem", color: "var(--signal-bright)", fontFamily: "var(--font-mono)" }}>Flip specs ↻</span>
+                </div>
+              </div>
+            }
+            back={
+              <div className="feature-card" style={{ height: "100%", margin: 0, borderColor: "rgba(0, 255, 157, 0.4)" }}>
+                <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 01</span>
+                <h3>Security Enclave</h3>
+                <p style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+                  Minted installation tokens expire after 60 minutes. Read-only permissions allow initial AST indexing without write grants.
+                </p>
+                <div style={{ marginTop: "auto" }}>
+                  <span className="feature-tag">Capability-Scoped Grants</span>
+                </div>
+              </div>
+            }
+          />
 
-          <div className="feature-card">
-            <span className="feature-idx">02</span>
-            <h3>Autonomous Diagnosis</h3>
-            <p>
-              UATU scans your AST tree, evaluates package dependencies, and leverages Amazon Nova Micro to triage and
-              prioritize actionable defects.
-            </p>
-            <span className="feature-tag">Smart Complexity Router</span>
-          </div>
+          <FlipCard
+            height={260}
+            tilt={true}
+            glare={true}
+            glareOpacity={0.25}
+            radius={18}
+            front={
+              <div className="feature-card" style={{ height: "100%", margin: 0 }}>
+                <span className="feature-idx">02</span>
+                <h3>Autonomous Diagnosis</h3>
+                <p>
+                  UATU scans your AST tree, evaluates package dependencies, and leverages Amazon Nova Micro to triage and
+                  prioritize actionable defects.
+                </p>
+                <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="feature-tag">Smart Complexity Router</span>
+                  <span style={{ fontSize: "0.72rem", color: "var(--signal-bright)", fontFamily: "var(--font-mono)" }}>Flip specs ↻</span>
+                </div>
+              </div>
+            }
+            back={
+              <div className="feature-card" style={{ height: "100%", margin: 0, borderColor: "rgba(0, 255, 157, 0.4)" }}>
+                <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 02</span>
+                <h3>AST &amp; Dependency Graph</h3>
+                <p style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+                  Heuristics and Bedrock LLM classify bugs into severity tiers. Security vulnerabilities match against GitHub Advisory Database.
+                </p>
+                <div style={{ marginTop: "auto" }}>
+                  <span className="feature-tag">Multi-Model Routing</span>
+                </div>
+              </div>
+            }
+          />
 
-          <div className="feature-card">
-            <span className="feature-idx">03</span>
-            <h3>Sandboxed Repair</h3>
-            <p>
-              Candidate diffs are synthesized by Amazon Nova 2 Omni and tested inside single-tenant filesystem sandboxes
-              with strict path allowlists.
-            </p>
-            <span className="feature-tag">Isolated Sandboxes</span>
-          </div>
+          <FlipCard
+            height={260}
+            tilt={true}
+            glare={true}
+            glareOpacity={0.25}
+            radius={18}
+            front={
+              <div className="feature-card" style={{ height: "100%", margin: 0 }}>
+                <span className="feature-idx">03</span>
+                <h3>Sandboxed Repair</h3>
+                <p>
+                  Candidate diffs are synthesized by Amazon Nova 2 Omni and tested inside single-tenant filesystem sandboxes
+                  with strict path allowlists.
+                </p>
+                <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="feature-tag">Isolated Sandboxes</span>
+                  <span style={{ fontSize: "0.72rem", color: "var(--signal-bright)", fontFamily: "var(--font-mono)" }}>Flip specs ↻</span>
+                </div>
+              </div>
+            }
+            back={
+              <div className="feature-card" style={{ height: "100%", margin: 0, borderColor: "rgba(0, 255, 157, 0.4)" }}>
+                <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 03</span>
+                <h3>Zero Host Leakage</h3>
+                <p style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+                  Ephemeral sandbox clones run test runners with strict timeouts. Any modified files outside the capability allowlist trigger instant task abort.
+                </p>
+                <div style={{ marginTop: "auto" }}>
+                  <span className="feature-tag">Path Allowlist Guard</span>
+                </div>
+              </div>
+            }
+          />
 
-          <div className="feature-card">
-            <span className="feature-idx">04</span>
-            <h3>Review &amp; Merge</h3>
-            <p>
-              Verified fixes are opened as reviewable GitHub draft pull requests complete with test logs. You maintain
-              complete merge authority.
-            </p>
-            <span className="feature-tag">Human in the Loop</span>
-          </div>
+          <FlipCard
+            height={260}
+            tilt={true}
+            glare={true}
+            glareOpacity={0.25}
+            radius={18}
+            front={
+              <div className="feature-card" style={{ height: "100%", margin: 0 }}>
+                <span className="feature-idx">04</span>
+                <h3>Review &amp; Merge</h3>
+                <p>
+                  Verified fixes are opened as reviewable GitHub draft pull requests complete with test logs. You maintain
+                  complete merge authority.
+                </p>
+                <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="feature-tag">Human in the Loop</span>
+                  <span style={{ fontSize: "0.72rem", color: "var(--signal-bright)", fontFamily: "var(--font-mono)" }}>Flip specs ↻</span>
+                </div>
+              </div>
+            }
+            back={
+              <div className="feature-card" style={{ height: "100%", margin: 0, borderColor: "rgba(0, 255, 157, 0.4)" }}>
+                <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 04</span>
+                <h3>Pass Certification</h3>
+                <p style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+                  Draft PRs include detailed test reproduction logs, root-cause rationale, and rollback instructions. Zero auto-merges are ever performed.
+                </p>
+                <div style={{ marginTop: "auto" }}>
+                  <span className="feature-tag">Zero Auto-Merge Rule</span>
+                </div>
+              </div>
+            }
+          />
         </div>
       </section>
 
       {/* Neural Knowledge Brain Showcase */}
       <section id="neural-brain" className="landing-section">
         <div className="section-eyebrow">Living Memory</div>
-        <h2 className="section-heading">Repository Brain: Spatial Code Knowledge</h2>
+        <h2 className="section-heading">
+          Biological Neural Brain: Spatial Code Knowledge
+        </h2>
         <p className="section-sub">
-          Unlike static linters that forget past runs, UATU builds an interactive neuron graph representing your files,
-          dependencies, known vulnerabilities, and verified past repairs.
+          Unlike static linters that forget past runs, UATU builds an organic biological neural tree representing
+          your directories, files, vulnerabilities, and verified patches. Click the Synaptic Gateways (+/-)
+          to expand and zoom into sub-branches.
         </p>
 
         <div style={{ borderRadius: "var(--radius-lg)", overflow: "hidden", border: "1px solid var(--ink-line)" }}>
@@ -328,7 +500,7 @@ export function Landing({
         </div>
       </section>
 
-      {/* Model Showcase Section */}
+      {/* Foundation Intelligence Section */}
       <section className="landing-section">
         <div className="section-eyebrow">Foundation Intelligence</div>
         <h2 className="section-heading">Powered by Leading AI Models</h2>
@@ -377,9 +549,7 @@ export function Landing({
       <section className="landing-section">
         <div className="section-eyebrow">Security Guarantees</div>
         <h2 className="section-heading">Engineered for Absolute Trust</h2>
-        <p className="section-sub">
-          Your code is private and protected by cryptographic boundaries.
-        </p>
+        <p className="section-sub">Your code is private and protected by cryptographic boundaries.</p>
 
         <div className="trust-grid">
           <div className="trust-card">
@@ -404,9 +574,10 @@ export function Landing({
       {/* Footer */}
       <footer className="landing-foot">
         <div className="brand brand-header-group">
-          <img src="/logo.png" alt="UATU Logo" style={{ width: "24px", height: "24px", borderRadius: "4px" }} />
+          <Logo size={26} />
           <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--paper)" }}>
-            UATU: Observe · Understand · Repair · Contribute
+            <span className="brand-duotone-ua">UA</span>
+            <span className="brand-duotone-tu">TU</span>: Observe · Understand · Repair · Contribute
           </span>
         </div>
 
@@ -417,7 +588,11 @@ export function Landing({
           <button type="button" onClick={() => setShowPrivacy(true)}>
             Privacy Policy
           </button>
-          <a href="https://github.com/Erebuzzz/Universal-Autonomous-Triage-and-Upkeep" target="_blank" rel="noreferrer">
+          <a
+            href="https://github.com/Erebuzzz/Universal-Autonomous-Triage-and-Upkeep"
+            target="_blank"
+            rel="noreferrer"
+          >
             GitHub Repository
           </a>
         </div>

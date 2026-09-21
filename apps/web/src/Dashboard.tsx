@@ -16,6 +16,7 @@ import { AuditTrail } from "./AuditTrail";
 import { BrainMapView } from "./BrainMapView";
 import { navigate } from "./path";
 import { PolicyScopeBar } from "./PolicyScopeBar";
+import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
 const FLOW = [
@@ -154,9 +155,12 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
     <div className="app-shell">
       <header className="topbar">
         <div className="brand brand-header-group">
-          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+          <Logo size={32} />
           <div className="brand-text">
-            <div className="brand-mark">UATU</div>
+            <div className="brand-mark">
+              <span className="brand-duotone-ua">UA</span>
+              <span className="brand-duotone-tu">TU</span>
+            </div>
             <div className="brand-tag">Observe · Understand · Repair · Contribute</div>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
+import { Stepper, Step } from "./components/Stepper";
+import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
 type DocId =
@@ -89,9 +91,12 @@ export function DocsPage({ onBack }: { onBack: () => void }) {
     <div className="docs-page">
       <header className="docs-topbar">
         <div className="brand-header-group" style={{ cursor: "pointer" }} onClick={onBack}>
-          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
+          <Logo size={32} />
           <div className="brand-text">
-            <div className="brand-mark">UATU</div>
+            <div className="brand-mark">
+              <span className="brand-duotone-ua">UA</span>
+              <span className="brand-duotone-tu">TU</span>
+            </div>
             <div className="brand-tag">User Documentation</div>
           </div>
         </div>
@@ -184,30 +189,48 @@ function GettingStartedDoc() {
       </section>
 
       <section>
-        <h2>Quickstart in Three Steps</h2>
-        <ol className="docs-step-list">
-          <li>
-            <strong>1. Sign in with GitHub</strong>
-            <p>
-              Click "Sign in with GitHub" on the landing page. UATU verifies your identity using standard GitHub OAuth,
-              ensuring that only you can access or manage your repository runs.
-            </p>
-          </li>
-          <li>
-            <strong>2. Authorize a Target Repository</strong>
-            <p>
-              Install the UATU GitHub App on the repositories you want monitored, or choose the built-in demo fixture
-              to test the system without connecting any live repositories.
-            </p>
-          </li>
-          <li>
-            <strong>3. Run Autonomous Triage</strong>
-            <p>
-              Click "Start Remediation" on your dashboard. UATU scans your codebase, builds a living neural map of your
-              architecture, isolates priority findings, and applies a verified patch.
-            </p>
-          </li>
-        </ol>
+        <h2>Interactive Quickstart Walkthrough</h2>
+        <p>Follow the interactive stepper below to configure and run your first autonomous upkeep cycle.</p>
+        <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
+          <Stepper initialStep={1}>
+            <Step>
+              <div style={{ padding: "1rem" }}>
+                <h3 style={{ margin: "0 0 0.5rem", color: "var(--paper)" }}>Step 1: Authenticate with GitHub</h3>
+                <p>
+                  Click "Sign in with GitHub" on the landing page or use a local mock session. UATU verifies your identity
+                  using standard GitHub OAuth, ensuring that only you can access or manage your repository runs.
+                </p>
+                <div className="docs-callout" style={{ marginTop: "1rem" }}>
+                  <strong>OAuth Scope:</strong> Grants read-only access to your public GitHub profile identifier.
+                </div>
+              </div>
+            </Step>
+            <Step>
+              <div style={{ padding: "1rem" }}>
+                <h3 style={{ margin: "0 0 0.5rem", color: "var(--paper)" }}>Step 2: Authorize a Target Repository</h3>
+                <p>
+                  Install the UATU GitHub App on the repositories you want monitored, or choose the built-in demo fixture
+                  to test the system without connecting any live repositories. Repositories start in a passive inspection state.
+                </p>
+                <div className="docs-callout" style={{ marginTop: "1rem" }}>
+                  <strong>Safety First:</strong> Repositories default to read-only until you initiate a remediation run.
+                </div>
+              </div>
+            </Step>
+            <Step>
+              <div style={{ padding: "1rem" }}>
+                <h3 style={{ margin: "0 0 0.5rem", color: "var(--paper)" }}>Step 3: Run Autonomous Triage &amp; Upkeep</h3>
+                <p>
+                  Click "Start Remediation" on your dashboard. UATU scans your codebase AST, constructs a living biological neural map
+                  of your architecture, isolates priority defects with Amazon Nova, tests candidate fixes in an isolated sandbox, and drafts a PR.
+                </p>
+                <div className="docs-callout" style={{ marginTop: "1rem" }}>
+                  <strong>Zero Auto-Merge:</strong> Review test logs and diffs directly before merging.
+                </div>
+              </div>
+            </Step>
+          </Stepper>
+        </div>
       </section>
     </article>
   );

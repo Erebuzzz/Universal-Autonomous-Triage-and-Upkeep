@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { BrainMap } from "./api";
 import { BrainMapView } from "./BrainMapView";
+import { Logo } from "./Logo";
 import { currentPath, navigate } from "./path";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -46,9 +47,12 @@ export function NotFoundPage({ onGoHome }: { onGoHome?: () => void }) {
 
       <div className="void-card">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-          <span className="void-badge">
-            ● Synaptic Disconnection · Error 404
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <Logo size={28} />
+            <span className="void-badge">
+              ● Synaptic Disconnection · Error 404
+            </span>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--mute)" }}>
               SECTOR: UNMAPPED_COORDINATE
