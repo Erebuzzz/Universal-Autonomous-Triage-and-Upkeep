@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Universal Autonomous Triage & Upkeep — Observe. Understand. Repair. Contribute.",
+  "description": "Universal Autonomous Triage & Upkeep: Observe. Understand. Repair. Contribute.",
   "workspaces": [
     "packages/*",
     "apps/*",

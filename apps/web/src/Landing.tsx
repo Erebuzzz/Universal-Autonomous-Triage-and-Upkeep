@@ -4,6 +4,7 @@ import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
 import { FlipCard } from "./components/FlipCard";
 import { LatticeLoader } from "./components/LatticeLoader";
+import { PixelSnow } from "./components/PixelSnow";
 import { SpecularButton } from "./components/SpecularButton";
 import { Logo } from "./Logo";
 import { navigate } from "./path";
@@ -83,6 +84,16 @@ export function Landing({
   return (
     <div className="landing">
       <div className="landing-atmosphere" aria-hidden>
+        <PixelSnow
+          color="#00ff9d"
+          flakeSize={0.015}
+          pixelResolution={180}
+          speed={0.85}
+          density={0.25}
+          direction={135}
+          brightness={0.85}
+          className="landing-snow-bg"
+        />
         <div className="landing-grid" />
         <div className="landing-scan" />
       </div>
@@ -491,8 +502,8 @@ export function Landing({
         </h2>
         <p className="section-sub">
           Unlike static linters that forget past runs, UATU builds an organic biological neural tree representing
-          your directories, files, vulnerabilities, and verified patches. Click the Synaptic Gateways (+/-)
-          to expand and zoom into sub-branches.
+          your directories, files, vulnerabilities, and verified patches. Double-click any node or click the Synaptic
+          Gateways (+/-) to expand and dramatically zoom into sub-branches. Double-click again to collapse.
         </p>
 
         <div style={{ borderRadius: "var(--radius-lg)", overflow: "hidden", border: "1px solid var(--ink-line)" }}>

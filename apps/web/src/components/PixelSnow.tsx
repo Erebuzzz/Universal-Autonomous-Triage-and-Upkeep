@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type CSSProperties,
+} from "react";
 import {
   Color,
   Mesh,
@@ -10,6 +16,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from "three";
+import "./PixelSnow.css";
 
 const vertexShader = `
 void main() {
@@ -35,6 +42,7 @@ uniform float uDensity;
 uniform float uVariant;
 uniform float uDirection;
 
+// Precomputed constants
 #define PI 3.14159265
 #define PI_OVER_6 0.5235988
 #define PI_OVER_3 1.0471976
@@ -44,12 +52,16 @@ uniform float uDirection;
 #define M3 3299493293U
 #define F0 2.3283064e-10
 
+// Optimized hash - inline multiplication
 #define hash(n) (n * (n ^ (n >> 15)))
 #define coord3(p) (uvec3(p).x * M1 ^ uvec3(p).y * M2 ^ uvec3(p).z * M3)
 
+// Precomputed camera basis vectors (normalized vec3(1,1,1), vec3(1,0,-1))
 const vec3 camK = vec3(0.57735027, 0.57735027, 0.57735027);
 const vec3 camI = vec3(0.70710678, 0.0, -0.70710678);
 const vec3 camJ = vec3(-0.40824829, 0.81649658, -0.40824829);
+
+// Precomputed branch direction
 const vec2 b1d = vec2(0.574, 0.819);
 
 vec3 hash3(uint n) {
@@ -110,6 +122,7 @@ void main() {
 
     if (cellHash < uDensity) {
       vec3 h = hash3(cellCoord);
+      
       vec3 sinArg1 = fpos.yzx * 0.073;
       vec3 sinArg2 = fpos.zxy * 0.27;
       vec3 flakePos = 0.5 - 0.5 * cos(4.0 * sin(sinArg1) + 4.0 * sin(sinArg2) + 2.0 * h + timeAnim);
@@ -175,27 +188,27 @@ export interface PixelSnowProps {
 }
 
 export function PixelSnow({
-  color = "#10b981",
-  flakeSize = 0.015,
-  minFlakeSize = 1.5,
-  pixelResolution = 180,
-  speed = 0.8,
-  depthFade = 10,
+  color = "#ffffff",
+  flakeSize = 0.01,
+  minFlakeSize = 1.25,
+  pixelResolution = 200,
+  speed = 1.25,
+  depthFade = 8,
   farPlane = 20,
-  brightness = 0.9,
+  brightness = 1,
   gamma = 0.4545,
-  density = 0.22,
-  variant = "round",
+  density = 0.3,
+  variant = "square",
   direction = 125,
   className = "",
   style = {},
 }: PixelSnowProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef(0);
-  const isVisibleRef = useRef(true);
+  const animationRef = useRef<number>(0);
+  const isVisibleRef = useRef<boolean>(true);
   const rendererRef = useRef<WebGLRenderer | null>(null);
   const materialRef = useRef<ShaderMaterial | null>(null);
-  const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resizeTimeoutRef = useRef<number | null>(null);
 
   const variantValue = useMemo(() => {
     return variant === "round" ? 1.0 : variant === "snowflake" ? 2.0 : 0.0;
@@ -210,7 +223,7 @@ export function PixelSnow({
     if (resizeTimeoutRef.current) {
       clearTimeout(resizeTimeoutRef.current);
     }
-    resizeTimeoutRef.current = setTimeout(() => {
+    resizeTimeoutRef.current = window.setTimeout(() => {
       const container = containerRef.current;
       const renderer = rendererRef.current;
       const material = materialRef.current;
@@ -231,7 +244,7 @@ export function PixelSnow({
       ([entry]) => {
         isVisibleRef.current = entry.isIntersecting;
       },
-      { threshold: 0 },
+      { threshold: 0 }
     );
 
     observer.observe(container);
@@ -242,6 +255,8 @@ export function PixelSnow({
     const container = containerRef.current;
     if (!container) return;
 
+    const scene = new Scene();
+    const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     let renderer: WebGLRenderer | null = null;
     try {
       renderer = new WebGLRenderer({
@@ -253,11 +268,8 @@ export function PixelSnow({
         depth: false,
       });
     } catch {
-      return; // WebGL unavailable fallback
+      return;
     }
-
-    const scene = new Scene();
-    const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.offsetWidth, container.offsetHeight);
@@ -307,7 +319,9 @@ export function PixelSnow({
     return () => {
       cancelAnimationFrame(animationRef.current);
       window.removeEventListener("resize", handleResize);
-      if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
       if (renderer && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
@@ -353,3 +367,5 @@ export function PixelSnow({
 
   return <div ref={containerRef} className={`pixel-snow-container ${className}`} style={style} />;
 }
+
+export default PixelSnow;

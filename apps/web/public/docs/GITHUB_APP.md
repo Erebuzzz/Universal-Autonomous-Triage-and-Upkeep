@@ -30,9 +30,9 @@ For OAuth install + installation tokens, configure the GitHub App and related se
 
 Web-only vars (safe in `VITE_*`):
 
-- `VITE_UATU_API_URL` — API origin for the dashboard
-- `VITE_UATU_GITHUB_APP_SLUG` — public App slug for install deep-links
-- `VITE_UATU_MOCK_AUTH` — local mock sign-in (dev only)
+- `VITE_UATU_API_URL` - API origin for the dashboard
+- `VITE_UATU_GITHUB_APP_SLUG` - public App slug for install deep-links
+- `VITE_UATU_MOCK_AUTH` - local mock sign-in (dev only)
 
 **Do not** put `UATU_GITHUB_TOKEN`, App private keys, or webhook secrets in `VITE_*`.
 

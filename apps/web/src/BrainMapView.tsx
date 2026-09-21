@@ -492,6 +492,8 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
   const [transform, setTransform] = useState<ViewTransform>({ x: 0, y: 0, k: 1 });
   const [entered, setEntered] = useState(reducedMotion);
   const [focusedBranchId, setFocusedBranchId] = useState<string | null>(null);
+  const [shockwaveId, setShockwaveId] = useState<string | null>(null);
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
 
   const safeNodes = Array.isArray(brain?.nodes) ? brain.nodes : [];
   const safeEdges = Array.isArray(brain?.edges) ? brain.edges : [];
@@ -638,16 +640,24 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     setTransform({ x: 0, y: 0, k: 1 });
   }, [safeNodes]);
 
-  /** Direct Synaptic Gateway toggle: unconditionally expands or collapses branch and animates camera */
-  const toggleSynapticBranch = useCallback(
-    (id: string, ev?: React.MouseEvent | React.KeyboardEvent) => {
+  /** Double-click or double-tap on a node: expands branch with dramatic zoom-in, or collapses with zoom-out */
+  const handleNodeDoubleClick = useCallback(
+    (id: string, ev?: React.SyntheticEvent) => {
       if (ev) {
         ev.stopPropagation();
       }
 
-      const isCurrentlyExpanded = expandedIds.has(id);
+      // Trigger visual shockwave burst animation
+      setShockwaveId(id);
+      window.setTimeout(() => {
+        setShockwaveId((curr) => (curr === id ? null : curr));
+      }, 700);
 
-      if (!isCurrentlyExpanded) {
+      const isCurrentlyExpanded = expandedIds.has(id);
+      const kids = childrenMap.get(id) ?? [];
+      const hasKids = kids.length > 0;
+
+      if (!isCurrentlyExpanded && hasKids) {
         // Expand branch
         setExpandedIds((prev) => {
           const next = new Set(prev);
@@ -657,15 +667,15 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
         setFocusedBranchId(id);
         setSelectedId(id);
 
-        // Smoothly zoom camera to focus on this soma and its upcoming children
+        // Dramatic zoom-in effect focusing on the node with view room for children
         const p = positions.get(id);
         if (p) {
-          const targetK = 1.45;
-          const targetX = viewW / 2 - (p.x + 80) * targetK;
+          const targetK = 2.45;
+          const targetX = viewW / 2 - (p.x + 85) * targetK;
           const targetY = viewH / 2 - p.y * targetK;
           setTransform({ x: targetX, y: targetY, k: targetK });
         }
-      } else {
+      } else if (isCurrentlyExpanded && hasKids) {
         // Collapse branch
         setExpandedIds((prev) => {
           const next = new Set(prev);
@@ -673,44 +683,93 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
           return next;
         });
 
+        // Smoothly zoom out to parent or overview
         const parentId = layout.parentOf.get(id);
         if (parentId && positions.has(parentId)) {
           setFocusedBranchId(parentId);
           setSelectedId(parentId);
           const pp = positions.get(parentId)!;
-          const targetK = 1.15;
+          const targetK = 1.25;
           setTransform({
-            x: viewW / 2 - pp.x * targetK,
+            x: viewW / 2 - (pp.x + 40) * targetK,
             y: viewH / 2 - pp.y * targetK,
             k: targetK,
           });
         } else {
           setFocusedBranchId(null);
+          setSelectedId(id);
           setTransform({ x: 0, y: 0, k: 1 });
+        }
+      } else {
+        // Leaf node: toggle inspection zoom-in / zoom-out
+        const p = positions.get(id);
+        if (p) {
+          if (focusedBranchId === id) {
+            const parentId = layout.parentOf.get(id);
+            if (parentId && positions.has(parentId)) {
+              setFocusedBranchId(parentId);
+              setSelectedId(parentId);
+              const pp = positions.get(parentId)!;
+              const targetK = 1.25;
+              setTransform({
+                x: viewW / 2 - (pp.x + 40) * targetK,
+                y: viewH / 2 - pp.y * targetK,
+                k: targetK,
+              });
+            } else {
+              setFocusedBranchId(null);
+              setTransform({ x: 0, y: 0, k: 1 });
+            }
+          } else {
+            setFocusedBranchId(id);
+            setSelectedId(id);
+            const targetK = 2.45;
+            const targetX = viewW / 2 - p.x * targetK;
+            const targetY = viewH / 2 - p.y * targetK;
+            setTransform({ x: targetX, y: targetY, k: targetK });
+          }
         }
       }
     },
-    [expandedIds, positions, layout.parentOf, viewW, viewH],
+    [expandedIds, childrenMap, positions, layout.parentOf, viewW, viewH, focusedBranchId],
   );
 
-  /** Clicking the soma node body selects/inspects node and focuses connected pathways */
-  const onSomaActivate = useCallback(
-    (id: string, clientX: number, clientY: number) => {
+  /** Direct Synaptic Gateway toggle: expands or collapses branch with dramatic zoom-in */
+  const toggleSynapticBranch = useCallback(
+    (id: string, ev?: React.MouseEvent | React.KeyboardEvent) => {
+      if (ev) {
+        ev.stopPropagation();
+      }
+      handleNodeDoubleClick(id, ev);
+    },
+    [handleNodeDoubleClick],
+  );
+
+  /** Clicking the soma node body selects/inspects node; detects double-tap for touch */
+  const onSomaClick = useCallback(
+    (id: string, clientX: number, clientY: number, ev?: React.SyntheticEvent) => {
+      if (ev) {
+        ev.stopPropagation();
+      }
+
+      const now = Date.now();
+      const lastTap = lastTapRef.current;
+      if (lastTap && lastTap.id === id && now - lastTap.time < 360) {
+        // Double-tap detected (touch or quick click)
+        lastTapRef.current = null;
+        handleNodeDoubleClick(id, ev);
+        return;
+      }
+      lastTapRef.current = { id, time: now };
+
+      // Single click: inspect/select node
       setSelectedId((prev) => (prev === id ? null : id));
       const rect = shellRef.current?.getBoundingClientRect();
       if (rect && clientX && clientY) {
         setTooltip({ x: clientX - rect.left, y: clientY - rect.top });
       }
-
-      const kids = childrenMap.get(id) ?? [];
-      if (kids.length > 0) {
-        // If unexpanded, also trigger branch expansion
-        if (!expandedIds.has(id)) {
-          toggleSynapticBranch(id);
-        }
-      }
     },
-    [childrenMap, expandedIds, toggleSynapticBranch],
+    [handleNodeDoubleClick],
   );
 
   const onWheel = useCallback((e: ReactWheelEvent) => {
@@ -718,7 +777,9 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     const svg = svgRef.current;
     if (!svg) return;
     const p = clientToSvg(svg, e.clientX, e.clientY);
-    const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+    // Smooth, dampened exponential zoom curve preventing trackpad sensitivity spikes
+    const clampedDelta = Math.max(-50, Math.min(50, e.deltaY));
+    const factor = Math.exp(-clampedDelta * 0.0018);
     setTransform((t) => {
       const nextK = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, t.k * factor));
       const wx = (p.x - t.x) / t.k;
@@ -753,7 +814,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
     const p = clientToSvg(svg, e.clientX, e.clientY);
     const dx = p.x - d.startSvgX;
     const dy = p.y - d.startSvgY;
-    if (Math.abs(dx) + Math.abs(dy) > 2) d.moved = true;
+    if (Math.abs(dx) + Math.abs(dy) > 5) d.moved = true;
     setTransform((t) => ({ ...t, x: d.origX + dx, y: d.origY + dy }));
   }, []);
 
@@ -966,8 +1027,8 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
             className="brain-world"
             transform={`translate(${transform.x} ${transform.y}) scale(${transform.k})`}
             style={{
-              transition: reducedMotion ? "none" : "transform 0.55s cubic-bezier(0.16, 1, 0.3, 1)",
-              transformOrigin: "center center",
+              transition: reducedMotion ? "none" : "transform 0.65s cubic-bezier(0.19, 1, 0.22, 1)",
+              transformOrigin: "0 0",
             }}
           >
             {/* Primary Hub Auric Halos */}
@@ -1081,7 +1142,13 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                     .join(" ")}
                   style={reducedMotion ? undefined : { transitionDelay: `${Math.min(i, 40) * 10}ms` }}
                   transform={`translate(${p.x}, ${p.y})`}
+                  onDoubleClick={(ev) => handleNodeDoubleClick(n.id, ev)}
                 >
+                  {/* Fidgety Shockwave Burst Ring on Double-Click Expand/Collapse */}
+                  {shockwaveId === n.id ? (
+                    <circle className="neuron-shockwave" r={r + 4} />
+                  ) : null}
+
                   {/* Outer Pulsing Synaptic Membrane */}
                   {isSelected || isActivated ? (
                     <circle className="neuron-pulse-ring" r={r + 6} />
@@ -1094,8 +1161,10 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                     style={{ stroke: kindStroke(n.kind), strokeWidth: isSelected ? 2.5 : 1.8 }}
                     filter={isSelected || isHover ? "url(#bio-soft)" : undefined}
                     onClick={(ev) => {
-                      ev.stopPropagation();
-                      onSomaActivate(n.id, ev.clientX, ev.clientY);
+                      onSomaClick(n.id, ev.clientX, ev.clientY, ev);
+                    }}
+                    onDoubleClick={(ev) => {
+                      handleNodeDoubleClick(n.id, ev);
                     }}
                     role="button"
                     tabIndex={0}
@@ -1103,7 +1172,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                     onKeyDown={(ev) => {
                       if (ev.key === "Enter" || ev.key === " ") {
                         ev.preventDefault();
-                        onSomaActivate(n.id, 0, 0);
+                        handleNodeDoubleClick(n.id, ev);
                       }
                     }}
                     onPointerEnter={(ev) => {
@@ -1215,9 +1284,9 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                     confidence {(n.confidence * 100).toFixed(0)}% · {n.status.toLowerCase()}
                     {kids.length > 0
                       ? isExpanded
-                        ? " (click badge to collapse)"
-                        : " (click badge to expand & zoom)"
-                      : ""}
+                        ? " (double-click node or badge to collapse)"
+                        : " (double-click node or badge to expand & zoom)"
+                      : " (double-click node to inspect & zoom)"}
                   </div>
                 </>
               );
@@ -1240,7 +1309,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
           </span>
         ) : (
           <span className="brain-map-hint">
-            Click Synaptic Gateway (+/-) to expand/collapse and zoom · Drag to pan · Scroll to zoom
+            Double-click node or click Synaptic Gateway (+/-) to expand &amp; zoom · Double-click to collapse · Drag to pan
           </span>
         )}
       </div>
