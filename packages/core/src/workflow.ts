@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { readFile, writeFile, mkdir, readdir, cp } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import {
   SCHEMA_VERSION,
@@ -75,6 +77,96 @@ export class WorkflowOrchestrator {
       grant?.repositoryFullName?.replace(/\//g, "__") ??
       this.repositoryId;
     return new RepositoryBrain(this.deps.store, repoId, { userId, organizationId });
+  }
+
+  /**
+   * Ensures the target repository exists on local disk in ephemeral serverless environments (e.g. AWS Lambda /tmp).
+   * Automatically re-clones GitHub repositories or restores fixture directories if the container was recycled.
+   */
+  async ensureRepositoryReady(
+    task: RemediationTask,
+    grant?: AuthorizationGrant,
+  ): Promise<void> {
+    const target = task.repositoryPath;
+    if (!target) return;
+
+    let isReady = false;
+    try {
+      if (existsSync(target)) {
+        const files = await readdir(target);
+        const visible = files.filter((f) => f !== ".git" && f !== ".uatu-work");
+        if (visible.length > 0) {
+          isReady = true;
+        }
+      }
+    } catch {
+      isReady = false;
+    }
+
+    if (isReady) {
+      this.deps.policy.grantTemporaryRoot(target);
+      return;
+    }
+
+    const fullName = task.repositoryFullName ?? grant?.repositoryFullName;
+    const installationId = task.installationId ?? grant?.installationId;
+    const isGithub = task.source === "github" || grant?.source === "github" || Boolean(fullName);
+
+    if (isGithub && fullName) {
+      const ref = parseGitHubRepo(fullName);
+      if (ref) {
+        await mkdir(path.dirname(target), { recursive: true });
+        const token = await resolveGitHubToken({ installationId });
+        const remote = await remoteHttpsUrlForRepo(ref);
+        const authArgs = token ? gitAuthExtraHeaderArgs(token) : [];
+        const result = spawnSync(
+          "git",
+          [
+            ...authArgs,
+            "clone",
+            "--depth",
+            "1",
+            "--single-branch",
+            remote,
+            target,
+          ],
+          {
+            encoding: "utf8",
+            timeout: 180_000,
+            env: {
+              ...process.env,
+              GIT_CEILING_DIRECTORIES: path.dirname(target),
+              GIT_TERMINAL_PROMPT: "0",
+            },
+          },
+        );
+        if (result.status === 0) {
+          this.deps.policy.grantTemporaryRoot(target);
+          if (task.patch?.branchName) {
+            spawnSync("git", ["checkout", "-B", task.patch.branchName], {
+              cwd: target,
+              encoding: "utf8",
+            });
+          }
+          return;
+        }
+      }
+    }
+
+    if (this.deps.fixturePath && target !== this.deps.fixturePath) {
+      try {
+        if (existsSync(this.deps.fixturePath)) {
+          await mkdir(path.dirname(target), { recursive: true });
+          await cp(this.deps.fixturePath, target, { recursive: true });
+          this.deps.policy.grantTemporaryRoot(target);
+          return;
+        }
+      } catch {
+        // Fallback continues
+      }
+    }
+
+    this.deps.policy.grantTemporaryRoot(target);
   }
 
   async createGrant(input: {
@@ -218,6 +310,7 @@ export class WorkflowOrchestrator {
       await this.deps.store.saveTask(task);
     }
     const grant = task.grantId ? await this.deps.store.getGrant(task.grantId) : undefined;
+    await this.ensureRepositoryReady(task, grant);
 
     switch (task.state) {
       case "DISCOVERED":

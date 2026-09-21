@@ -4,6 +4,7 @@ import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
 import { navigate } from "./path";
 import { PrivacyModal } from "./PrivacyModal";
+import { ThemeToggle } from "./ThemeToggle";
 
 type Props = {
   oauthConfigured: boolean;
@@ -63,15 +64,17 @@ export function Landing({
   const canOAuth = oauthConfigured;
   const showMock = flags.mockAuth || !oauthConfigured;
   const [activeStep, setActiveStep] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const brain = demoBrainMap();
 
   useEffect(() => {
+    if (isPaused) return;
     const timer = setInterval(() => {
       setActiveStep((prev) => (prev + 1) % TELEMETRY_STEPS.length);
     }, 3200);
     return () => clearInterval(timer);
-  }, []);
+  }, [isPaused]);
 
   return (
     <div className="landing">
@@ -118,6 +121,7 @@ export function Landing({
           >
             Privacy
           </button>
+          <ThemeToggle />
         </nav>
       </header>
 
@@ -140,8 +144,11 @@ export function Landing({
 
           <div className="landing-cta">
             {canOAuth ? (
-              <a className="btn btn-primary btn-lg" href={api.githubLoginUrl()}>
-                Sign in with GitHub
+              <a className="btn btn-primary btn-lg" href={api.githubLoginUrl()} style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                </svg>
+                <span>Sign in with GitHub</span>
               </a>
             ) : (
               <button
@@ -154,8 +161,18 @@ export function Landing({
               </button>
             )}
             {canOAuth && !authRequired && (
-              <button className="btn btn-ghost btn-lg" type="button" disabled={busy} onClick={onLocalDemo}>
-                Local Fixture Demo
+              <button
+                className="btn btn-ghost btn-lg"
+                type="button"
+                disabled={busy}
+                onClick={onLocalDemo}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="4 17 10 11 4 5" />
+                  <line x1="12" y1="19" x2="20" y2="19" />
+                </svg>
+                <span>Local Fixture Demo</span>
               </button>
             )}
             {showMock && canOAuth && (
@@ -163,8 +180,17 @@ export function Landing({
                 Mock Session
               </button>
             )}
-            <button className="btn btn-ghost btn-lg" type="button" onClick={() => navigate("/docs")}>
-              User Guide
+            <button
+              className="btn btn-ghost btn-lg"
+              type="button"
+              onClick={() => navigate("/docs")}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+              <span>User Guide</span>
             </button>
           </div>
 
@@ -184,7 +210,27 @@ export function Landing({
               <span className="terminal-dot green" />
             </div>
             <span className="telemetry-title">Autonomous Triage Telemetry</span>
-            <span className="telemetry-badge">LIVE RUN</span>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+              <button
+                type="button"
+                className="brain-zoom-btn"
+                style={{ padding: "0.15rem 0.5rem", fontSize: "0.68rem" }}
+                onClick={() => setIsPaused((p) => !p)}
+                title={isPaused ? "Resume simulation" : "Pause simulation"}
+              >
+                {isPaused ? "▶ Play" : "⏸ Pause"}
+              </button>
+              <button
+                type="button"
+                className="brain-zoom-btn"
+                style={{ padding: "0.15rem 0.5rem", fontSize: "0.68rem" }}
+                onClick={() => setActiveStep((prev) => (prev + 1) % TELEMETRY_STEPS.length)}
+                title="Step forward"
+              >
+                Step ↷
+              </button>
+              <span className="telemetry-badge">LIVE SIM</span>
+            </div>
           </div>
 
           <div className="telemetry-body">

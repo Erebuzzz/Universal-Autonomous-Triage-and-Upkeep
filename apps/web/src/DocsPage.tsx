@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
+import { ThemeToggle } from "./ThemeToggle";
 
 type DocId =
   | "getting-started"
@@ -94,7 +95,8 @@ export function DocsPage({ onBack }: { onBack: () => void }) {
             <div className="brand-tag">User Documentation</div>
           </div>
         </div>
-        <div className="docs-topbar-actions">
+        <div className="docs-topbar-actions" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <ThemeToggle />
           <button type="button" className="btn btn-ghost" onClick={onBack}>
             ← Back to App
           </button>

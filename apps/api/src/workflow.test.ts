@@ -80,4 +80,23 @@ describe("workflow integration", () => {
       /Unknown grant|policy/i,
     );
   });
+
+  it("re-hydrates sandbox when directory is missing before advance", async () => {
+    const sandboxDir = path.join(tmp, "ephemeral-sandbox");
+    const grant = await orchestrator.createGrant({
+      grantedBy: "test",
+      targetPath: sandboxDir,
+      source: "fixture",
+    });
+    let task = await orchestrator.startRun(grant.id);
+    assert.equal(task.state, "DISCOVERED");
+
+    // Simulate Lambda container cold-start recycling: delete local directory
+    await rm(sandboxDir, { recursive: true, force: true });
+
+    // Advance should automatically re-hydrate directory and proceed to TRIAGED
+    task = await orchestrator.advance(task.id);
+    assert.equal(task.state, "TRIAGED");
+    assert.ok(task.findings.length > 0);
+  });
 });

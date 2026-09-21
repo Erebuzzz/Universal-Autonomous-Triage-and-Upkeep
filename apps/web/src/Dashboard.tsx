@@ -16,6 +16,7 @@ import { AuditTrail } from "./AuditTrail";
 import { BrainMapView } from "./BrainMapView";
 import { navigate } from "./path";
 import { PolicyScopeBar } from "./PolicyScopeBar";
+import { ThemeToggle } from "./ThemeToggle";
 
 const FLOW = [
   "Authorize target",
@@ -172,6 +173,7 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
             ) : null}
             {user.login}
           </span>
+          <ThemeToggle />
           <button className="btn btn-ghost" type="button" onClick={() => navigate("/docs")}>
             Docs
           </button>

@@ -1,33 +1,49 @@
-:root {
-  /* Cybernetic Guardian: Obsidian void + Robot Emerald (#10b981) + Laser Crimson (#ef4444) */
-  --ink: #080c10;
-  --ink-elevated: #0e141c;
-  --ink-surface: #141c26;
-  --ink-line: #1e293b;
-  --ink-line-bright: #334155;
-  --paper: #f0f6fc;
-  --paper-dim: #c9d1d9;
+:root,
+[data-theme="dark"] {
+  /* 4 Brand Colors: Forest Green, Red, Black (AMOLED), White */
+  --bg-void: #000000; /* True AMOLED Black */
+  --bg-base: #040810;
+  --ink: #000000;
+  --ink-elevated: #08101e;
+  --ink-surface: #0d1728;
+  --ink-line: rgba(255, 255, 255, 0.1);
+  --ink-line-bright: rgba(16, 185, 129, 0.4);
+  --glass-bg: rgba(8, 16, 30, 0.75);
+  --glass-border: rgba(16, 185, 129, 0.25);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+
+  --paper: #ffffff; /* Pure White */
+  --paper-dim: #cbd5e1;
+  --text: #ffffff;
+  --text-dim: #94a3b8;
+  --mute: #64748b;
+
+  /* Forest Green Spectrum */
+  --forest: #047857;
+  --forest-deep: #064e3b;
   --signal: #10b981;
   --signal-soft: #34d399;
   --signal-bright: #00ff88;
-  --signal-glow: rgba(16, 185, 129, 0.28);
+  --signal-glow: rgba(16, 185, 129, 0.35);
+
+  /* Red Spectrum */
   --ruby: #ef4444;
   --ruby-soft: #f87171;
-  --ruby-glow: rgba(239, 68, 68, 0.28);
+  --ruby-bright: #dc2626;
+  --ruby-glow: rgba(239, 68, 68, 0.35);
+
   --cyan: #38bdf8;
   --pass: #10b981;
   --fail: #ef4444;
-  --mute: #8b949e;
-  --text: #f0f6fc;
-  --text-dim: #94a3b8;
   --focus: #10b981;
-  --warn-bg: rgba(239, 68, 68, 0.12);
-  --deny-bg: rgba(239, 68, 68, 0.18);
-  --pass-bg: rgba(16, 185, 129, 0.12);
+  --warn-bg: rgba(239, 68, 68, 0.15);
+  --deny-bg: rgba(239, 68, 68, 0.22);
+  --pass-bg: rgba(16, 185, 129, 0.15);
 
-  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", "Consolas", monospace;
-  --font-display: "Newsreader", "Georgia", serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Consolas", monospace;
+  --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -38,15 +54,60 @@
   --space-7: 3rem;
   --space-8: 4.5rem;
 
-  --radius-sm: 4px;
-  --radius: 6px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --dur: 200ms;
   --dur-slow: 400ms;
 
   color-scheme: dark;
+}
+
+[data-theme="light"] {
+  /* Light Mode with Distinctive Forest Green Tinge & Liquid Glass */
+  --bg-void: #f1fbf5; /* Green-tinged mint porcelain */
+  --bg-base: #e7f7ee;
+  --ink: #f1fbf5;
+  --ink-elevated: #ffffff;
+  --ink-surface: #ffffff;
+  --ink-line: rgba(5, 150, 105, 0.16);
+  --ink-line-bright: rgba(5, 150, 105, 0.38);
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(5, 150, 105, 0.24);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-shadow: 0 16px 40px -10px rgba(5, 78, 59, 0.14);
+
+  --paper: #052e16; /* Deep Forest Black */
+  --paper-dim: #164e2e;
+  --text: #052e16;
+  --text-dim: #164e2e;
+  --mute: #4b7a5e;
+
+  /* Forest Green Spectrum */
+  --forest: #047857;
+  --forest-deep: #064e3b;
+  --signal: #059669;
+  --signal-soft: #10b981;
+  --signal-bright: #047857;
+  --signal-glow: rgba(5, 150, 105, 0.22);
+
+  /* Red Spectrum */
+  --ruby: #dc2626;
+  --ruby-soft: #ef4444;
+  --ruby-bright: #b91c1c;
+  --ruby-glow: rgba(220, 38, 38, 0.2);
+
+  --cyan: #0284c7;
+  --pass: #059669;
+  --fail: #dc2626;
+  --focus: #059669;
+  --warn-bg: rgba(220, 38, 38, 0.1);
+  --deny-bg: rgba(220, 38, 38, 0.15);
+  --pass-bg: rgba(5, 150, 105, 0.12);
+
+  color-scheme: light;
 }
 
 *,
@@ -67,11 +128,20 @@ body {
   font-size: 15px;
   line-height: 1.6;
   color: var(--text);
-  background:
-    radial-gradient(1000px 520px at 12% -10%, rgba(16, 185, 129, 0.08), transparent 55%),
-    radial-gradient(800px 480px at 90% 15%, rgba(239, 68, 68, 0.05), transparent 50%),
-    linear-gradient(180deg, #06090d 0%, var(--ink) 45%, #090e14 100%);
+  background-color: var(--bg-void);
+  background-image:
+    radial-gradient(1100px 540px at 15% -10%, rgba(16, 185, 129, 0.14), transparent 60%),
+    radial-gradient(850px 500px at 85% 15%, rgba(239, 68, 68, 0.08), transparent 55%),
+    linear-gradient(180deg, var(--bg-void) 0%, var(--bg-base) 100%);
   background-attachment: fixed;
+  transition: background-color var(--dur-slow) var(--ease), color var(--dur-slow) var(--ease);
+}
+
+[data-theme="light"] body {
+  background-image:
+    radial-gradient(1100px 540px at 15% -10%, rgba(16, 185, 129, 0.18), transparent 60%),
+    radial-gradient(850px 500px at 85% 15%, rgba(220, 38, 38, 0.05), transparent 55%),
+    linear-gradient(180deg, var(--bg-void) 0%, var(--bg-base) 100%);
 }
 
 button,
@@ -2576,4 +2646,181 @@ button.target-option:hover:not(:disabled) {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* -- Liquid Glass ("liquid class") & Theme Toggle -- */
+
+.liquid-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 1px 0 var(--glass-highlight);
+  border-radius: var(--radius-lg);
+  position: relative;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.liquid-glass:hover {
+  border-color: var(--ink-line-bright);
+  box-shadow: var(--glass-shadow), 0 0 35px var(--signal-glow), inset 0 1px 1px 0 var(--glass-highlight);
+}
+
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--ink-line);
+  background: var(--glass-bg);
+  color: var(--text);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all var(--dur) var(--ease);
+  padding: 0;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+  transform: rotate(15deg) scale(1.05);
+  box-shadow: 0 0 16px var(--signal-glow);
+}
+
+.theme-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* -- Expandable & Zoomable Dendron Brain Map Controls -- */
+
+.brain-shell {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.brain-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: 0.65rem 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid var(--ink-line);
+}
+
+[data-theme="light"] .brain-topbar {
+  background: rgba(240, 253, 244, 0.6);
+  border-bottom: 1px solid rgba(5, 150, 105, 0.15);
+}
+
+.brain-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.brain-crumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: all var(--dur) var(--ease);
+}
+
+.brain-crumb-item:hover,
+.brain-crumb-item.active {
+  color: var(--signal-bright);
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.brain-crumb-sep {
+  color: var(--mute);
+  font-size: 0.7rem;
+}
+
+.brain-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.brain-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--ink-line);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  transition: all var(--dur) var(--ease);
+}
+
+[data-theme="light"] .brain-zoom-btn {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(5, 150, 105, 0.2);
+  color: var(--text);
+}
+
+.brain-zoom-btn:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 12px var(--signal-glow);
+}
+
+.brain-zoom-btn:active {
+  transform: scale(0.96);
+}
+
+.brain-branch-badge {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--signal-bright);
+}
+
+.brain-node-hitbox {
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease);
+}
+
+.brain-node-hitbox:hover {
+  filter: drop-shadow(0 0 8px var(--signal));
+}
+
+.branch-focus-active {
+  animation: branch-glow-pulse 2s infinite ease-in-out;
+}
+
+@keyframes branch-glow-pulse {
+  0%, 100% { stroke-opacity: 0.9; stroke-width: 2.5px; }
+  50% { stroke-opacity: 0.4; stroke-width: 1.5px; }
 }

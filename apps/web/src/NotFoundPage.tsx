@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { BrainMap } from "./api";
 import { BrainMapView } from "./BrainMapView";
 import { currentPath, navigate } from "./path";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function NotFoundPage({ onGoHome }: { onGoHome?: () => void }) {
   const path = currentPath();
@@ -48,9 +49,12 @@ export function NotFoundPage({ onGoHome }: { onGoHome?: () => void }) {
           <span className="void-badge">
             ● Synaptic Disconnection · Error 404
           </span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--mute)" }}>
-            SECTOR: UNMAPPED_COORDINATE
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--mute)" }}>
+              SECTOR: UNMAPPED_COORDINATE
+            </span>
+            <ThemeToggle />
+          </div>
         </div>
 
         <h1 className="void-heading">Neural Synapse Not Found</h1>

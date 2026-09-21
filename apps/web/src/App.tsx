@@ -27,6 +27,7 @@ import {
   navigate,
   resumePendingInstallIfNeeded,
 } from "./path";
+import { useTheme } from "./ThemeToggle";
 
 type Gate = "loading" | "landing" | "onboarding" | "dashboard";
 
@@ -61,6 +62,7 @@ function clearSignedInParam() {
 }
 
 export function App() {
+  useTheme();
   const [path, setPath] = useState(currentPath);
   const [gate, setGate] = useState<Gate>("loading");
   const [health, setHealth] = useState<HealthStatus | null>(null);
