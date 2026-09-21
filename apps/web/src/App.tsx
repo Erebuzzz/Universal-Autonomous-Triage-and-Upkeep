@@ -14,9 +14,19 @@ import { BrainMapPreview } from "./BrainMapPreview";
 import { Dashboard } from "./Dashboard";
 import { DocsPage } from "./DocsPage";
 import { Landing } from "./Landing";
+import { NotFoundPage } from "./NotFoundPage";
 import { Onboarding } from "./Onboarding";
 import { OnboardingComplete } from "./OnboardingComplete";
-import { currentPath, isDocsPath, isOnboardingCompletePath, navigate, resumePendingInstallIfNeeded } from "./path";
+import { PrivacyModal } from "./PrivacyModal";
+import {
+  currentPath,
+  isDocsPath,
+  isKnownPath,
+  isOnboardingCompletePath,
+  isPrivacyPath,
+  navigate,
+  resumePendingInstallIfNeeded,
+} from "./path";
 
 type Gate = "loading" | "landing" | "onboarding" | "dashboard";
 
@@ -213,6 +223,45 @@ export function App() {
     return (
       <DocsPage
         onBack={() => {
+          if (user && grant) {
+            setGate("dashboard");
+            navigate("/", { replace: true });
+          } else if (user) {
+            setGate("onboarding");
+            navigate("/onboarding", { replace: true });
+          } else {
+            setGate("landing");
+            navigate("/", { replace: true });
+          }
+        }}
+      />
+    );
+  }
+
+  if (isPrivacyPath(path)) {
+    return (
+      <PrivacyModal
+        asFullPage
+        onClose={() => {
+          if (user && grant) {
+            setGate("dashboard");
+            navigate("/", { replace: true });
+          } else if (user) {
+            setGate("onboarding");
+            navigate("/onboarding", { replace: true });
+          } else {
+            setGate("landing");
+            navigate("/", { replace: true });
+          }
+        }}
+      />
+    );
+  }
+
+  if (!isKnownPath(path)) {
+    return (
+      <NotFoundPage
+        onGoHome={() => {
           if (user && grant) {
             setGate("dashboard");
             navigate("/", { replace: true });

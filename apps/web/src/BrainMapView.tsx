@@ -39,19 +39,19 @@ const SLOT_GAP = 22;
 const STRUCTURAL = new Set(["Organization", "Repository", "Directory", "File"]);
 
 const KIND_STROKE: Record<string, string> = {
-  Organization: "#cfc6b4",
-  Repository: "#e8c48a",
-  Directory: "#7f8b9a",
-  File: "#9aa6b4",
-  Dependency: "#3d8f6e",
-  Test: "#6a9bb8",
-  Bug: "#c45c4a",
-  SecurityFinding: "#c9842a",
-  Patch: "#e8c48a",
-  VerificationResult: "#3d8f6e",
-  Observation: "#9aa6b4",
-  Hypothesis: "#cfc6b4",
-  Issue: "#c45c4a",
+  Organization: "#f0f6fc",
+  Repository: "#10b981",
+  Directory: "#64748b",
+  File: "#94a3b8",
+  Dependency: "#059669",
+  Test: "#38bdf8",
+  Bug: "#ef4444",
+  SecurityFinding: "#f87171",
+  Patch: "#34d399",
+  VerificationResult: "#00ff88",
+  Observation: "#cbd5e1",
+  Hypothesis: "#e2e8f0",
+  Issue: "#dc2626",
 };
 
 const DEFAULT_KINDS = [
@@ -301,7 +301,7 @@ function buildForest(nodes: BrainNode[], parentOf: Map<string, string>): LayoutT
   return roots.map((id) => make(id, 0, new Set())).filter((t): t is LayoutTree => Boolean(t));
 }
 
-/** Reingold–Tilford style: assign contiguous leaf slots, center parents. */
+/** Reingold-Tilford style: assign contiguous leaf slots, center parents. */
 function assignSlots(tree: LayoutTree, cursor: { n: number }): void {
   if (!tree.children.length) {
     tree.slot = cursor.n;

@@ -16,6 +16,24 @@ export function isDocsPath(path = currentPath()): boolean {
   return path === "/docs" || path.startsWith("/docs/") || path.endsWith("/docs");
 }
 
+export function isPrivacyPath(path = currentPath()): boolean {
+  return path === "/privacy" || path.startsWith("/privacy/") || path.endsWith("/privacy");
+}
+
+export function isOnboardingPath(path = currentPath()): boolean {
+  return path === "/onboarding" || path.endsWith("/onboarding");
+}
+
+export function isKnownPath(path = currentPath()): boolean {
+  return (
+    path === "/" ||
+    isOnboardingPath(path) ||
+    isOnboardingCompletePath(path) ||
+    isDocsPath(path) ||
+    isPrivacyPath(path)
+  );
+}
+
 export function navigate(path: string, opts?: { replace?: boolean; search?: string }) {
   const url = `${path}${opts?.search ?? ""}`;
   if (opts?.replace) {
