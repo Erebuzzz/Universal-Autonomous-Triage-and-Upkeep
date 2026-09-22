@@ -35,17 +35,17 @@ export function BrandLockup({
 
   const titleSize =
     size === "sm"
-      ? "0.82rem"
+      ? "0.85rem"
       : size === "lg"
-        ? "1.25rem"
-        : "1rem";
+        ? "1.3rem"
+        : "1.05rem";
 
   const tagSize =
     size === "sm"
       ? "0.62rem"
       : size === "lg"
         ? "0.72rem"
-        : "0.68rem";
+        : "0.66rem";
 
   const content = (
     <div
@@ -53,7 +53,7 @@ export function BrandLockup({
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: size === "sm" ? "0.45rem" : "0.75rem",
+        gap: size === "sm" ? "0.5rem" : "0.75rem",
         textDecoration: "none",
         cursor: href || onClick ? "pointer" : "default",
         ...style,
@@ -61,18 +61,23 @@ export function BrandLockup({
       onClick={onClick}
     >
       <Logo size={pixelSize} glow={glow} />
-      <div className="brand-text" style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+      <div className="brand-text" style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
         <div
           className="brand-mark"
           style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 700,
-            letterSpacing: "0.08em",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 800,
+            letterSpacing: "0.14em",
             fontSize: titleSize,
+            color: "var(--paper)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.3rem",
+            textTransform: "uppercase",
           }}
         >
-          <span className="brand-duotone-ua">UA</span>
-          <span className="brand-duotone-tu">TU</span>
+          <span>UATU</span>
+          <span style={{ color: "var(--signal-ember)", fontSize: "0.65em" }}>●</span>
         </div>
         {showTag && (subtitle || variant !== "minimal") && (
           <div
@@ -80,16 +85,17 @@ export function BrandLockup({
             style={{
               fontFamily: "var(--font-mono)",
               fontSize: tagSize,
-              letterSpacing: "0.06em",
-              color: "var(--text-dim)",
+              letterSpacing: "0.12em",
+              color: "var(--paper-dim)",
               marginTop: "0.15rem",
+              textTransform: "uppercase",
             }}
           >
             {subtitle
               ? subtitle
               : variant === "tagline"
-                ? "Observe · Understand · Repair · Contribute"
-                : "Universal Autonomous Triage & Upkeep"}
+                ? "[ OBSERVED · TRIAGED · REPAIRED ]"
+                : "[ 35.6762°N // AUTONOMOUS_UPKEEP ]"}
           </div>
         )}
       </div>

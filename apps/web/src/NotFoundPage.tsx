@@ -47,31 +47,31 @@ export function NotFoundPage({ onGoHome }: { onGoHome?: () => void }) {
         <div className="utopia-starlight-glow" />
       </div>
 
-      <div className="void-card">
+      <div className="void-card utopia-hud-frame" style={{ padding: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
             <BrandLockup size="sm" showTag={false} href="/" />
-            <span className="void-badge">
-              ● Synaptic Disconnection · Error 404
+            <span className="utopia-hash-badge">
+              ● SYNAPTIC DISCONNECTION // ERROR_404
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--mute)" }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--paper-dim)" }}>
               SECTOR: UNMAPPED_COORDINATE
             </span>
             <ThemeToggle />
           </div>
         </div>
 
-        <h1 className="void-heading">Neural Synapse Not Found</h1>
+        <h1 className="void-heading" style={{ fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>Neural Synapse Not Found</h1>
 
-        <p style={{ color: "var(--text-dim)", margin: 0, fontSize: "1rem", lineHeight: 1.55 }}>
-          The requested coordinate <code style={{ color: "var(--ruby-soft)", background: "rgba(239, 68, 68, 0.1)", padding: "0.2rem 0.4rem", borderRadius: "4px" }}>{path}</code> does not exist within the living repository brain. The synaptic pathway is severed.
+        <p style={{ color: "var(--paper-dim)", margin: 0, fontSize: "0.95rem", lineHeight: 1.55 }}>
+          The requested coordinate <code style={{ color: "var(--signal-ember)", background: "rgba(255, 59, 0, 0.1)", padding: "0.2rem 0.4rem", borderRadius: "4px" }}>{path}</code> does not exist within the living repository cartography. The synaptic pathway is severed.
         </p>
 
-        {/* Embedded Severed Neural Graph */}
-        <div style={{ borderRadius: "var(--radius)", overflow: "hidden", border: "1px solid rgba(239, 68, 68, 0.25)" }}>
-          <BrainMapView brain={severedBrain} />
+        {/* Embedded Severed Topographic Graph */}
+        <div style={{ overflow: "hidden", border: "1px solid var(--ink-line)" }}>
+          <BrainMapView brain={severedBrain} height={380} />
         </div>
 
         <div className="void-code">
@@ -82,12 +82,12 @@ export function NotFoundPage({ onGoHome }: { onGoHome?: () => void }) {
           <div>RECOMMENDATION: Reroute execution to authenticated brain root</div>
         </div>
 
-        <div className="void-actions">
-          <button type="button" className="btn btn-primary" onClick={handleHome}>
-            Reconnect to Repository Root
+        <div className="void-actions" style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          <button type="button" className="btn-utopia" onClick={handleHome}>
+            &gt;_RECONNECT_REPOSITORY_ROOT
           </button>
-          <button type="button" className="btn btn-ghost" onClick={() => navigate("/docs")}>
-            Open User Documentation
+          <button type="button" className="btn-utopia btn-utopia-ghost" onClick={() => navigate("/docs")}>
+            &gt;_USER_DOCUMENTATION
           </button>
         </div>
       </div>

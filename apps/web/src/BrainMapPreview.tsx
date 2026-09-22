@@ -50,11 +50,11 @@ export function demoBrainMap(): BrainMap {
 export function BrainMapPreview() {
   const brain = demoBrainMap();
   return (
-    <div className="app-shell" style={{ padding: "1.5rem", maxWidth: 960, margin: "0 auto" }}>
+    <div className="app-shell utopia-cross-grid" style={{ padding: "1.5rem", maxWidth: 1100, margin: "0 auto" }}>
       <header style={{ marginBottom: "1rem" }}>
-        <BrandLockup size="md" subtitle="Brain map · biological neural dendrogram preview" href="/" />
+        <BrandLockup size="md" subtitle="[ 35.6762°N // TOPOGRAPHIC_CARTOGRAPHY ]" href="/" />
       </header>
-      <BrainMapView brain={brain} />
+      <BrainMapView brain={brain} height={640} />
     </div>
   );
 }

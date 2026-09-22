@@ -282,8 +282,8 @@ export function App() {
 
   if (gate === "loading") {
     return (
-      <div className="boot-screen" role="status" aria-live="polite">
-        <BrandLockup size="lg" variant="minimal" subtitle="Loading operator surface…" />
+      <div className="boot-screen utopia-cross-grid" role="status" aria-live="polite">
+        <BrandLockup size="lg" variant="minimal" subtitle="[ 35.6762°N // INITIALIZING_OPERATOR_SURFACE ]" />
         {bootError ? <p className="landing-health-warn">{bootError}</p> : null}
       </div>
     );

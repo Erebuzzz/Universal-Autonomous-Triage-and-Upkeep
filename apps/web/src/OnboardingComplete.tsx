@@ -189,14 +189,14 @@ export function OnboardingComplete({
   if (authLoading) {
     return (
       <div className="boot-screen" role="status" aria-live="polite">
-        <BrandLockup size="lg" variant="minimal" subtitle="Confirming GitHub App install…" />
+        <BrandLockup size="lg" variant="minimal" subtitle="[ 35.6762°N // CONFIRMING_INSTALL ]" />
       </div>
     );
   }
 
   if (phase === "need_auth" || !me) {
     return (
-      <div className="complete-shell">
+      <div className="complete-shell utopia-cross-grid">
         <div className="complete-atmosphere" aria-hidden>
           <div className="utopia-matrix-grid" />
           <div className="utopia-meridian-lines" />
@@ -206,8 +206,8 @@ export function OnboardingComplete({
           <BrandLockup size="lg" href="/" />
         </header>
         <main className="complete-main">
-          <p className="landing-eyebrow">GitHub App · pending session</p>
-          <h1 className="complete-title">Sign in to finish setup</h1>
+          <p className="landing-eyebrow">[ GITHUB APP // PENDING_SESSION ]</p>
+          <h1 className="complete-title">Sign In to Finish Setup</h1>
           <p className="onboard-copy">
             Your App install succeeded
             {installationId ? (
@@ -218,28 +218,28 @@ export function OnboardingComplete({
             ) : null}
             . Sign in so UATU can link it to this operator session, then pick a triage target.
           </p>
-          <div className="landing-cta">
+          <div className="landing-cta" style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
             {oauthConfigured ? (
               <a
-                className="btn btn-primary btn-lg"
+                className="btn-utopia"
                 href={oauthLoginUrl()}
                 onClick={() => {
                   if (installationId) stashPendingInstall(installationId, setupAction);
                 }}
               >
-                Sign in with GitHub
+                &gt;_SIGN_IN_GITHUB
               </a>
             ) : (
-              <button className="btn btn-primary btn-lg" type="button" onClick={onEnterLocalDemo}>
-                Continue with local demo
+              <button className="btn-utopia" type="button" onClick={onEnterLocalDemo}>
+                &gt;_CONTINUE_DEMO
               </button>
             )}
             <button
-              className="btn btn-ghost btn-lg"
+              className="btn-utopia btn-utopia-ghost"
               type="button"
               onClick={() => navigate("/")}
             >
-              Back to landing
+              &gt;_RETURN_LANDING
             </button>
           </div>
         </main>
@@ -248,7 +248,7 @@ export function OnboardingComplete({
   }
 
   return (
-    <div className="complete-shell">
+    <div className="complete-shell utopia-cross-grid">
       <div className="complete-atmosphere" aria-hidden>
         <div className="utopia-matrix-grid" />
         <div className="utopia-meridian-lines" />
@@ -256,7 +256,7 @@ export function OnboardingComplete({
       </div>
 
       <header className="topbar">
-        <BrandLockup size="md" subtitle={`Connected · ${user?.login ?? me.user.login}`} href="/" />
+        <BrandLockup size="md" subtitle={`[ CONNECTED // ${user?.login ?? me.user.login} ]`} href="/" />
         <div className="topbar-actions">
           <button
             className="btn btn-ghost"

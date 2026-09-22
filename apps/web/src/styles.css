@@ -1,45 +1,45 @@
 :root,
 [data-theme="dark"] {
-  /* 4 Brand Colors: Forest Green, Red, Black (AMOLED), White */
-  --bg-void: #000000; /* True AMOLED Black */
-  --bg-base: #040810;
+  /* Tokyo Monochrome & Surgical Ember Vermilion Palette */
+  --bg-void: #000000; /* Pure Pitch Black */
+  --bg-base: #060608;
   --ink: #000000;
-  --ink-elevated: #08101e;
-  --ink-surface: #0d1728;
-  --ink-line: rgba(255, 255, 255, 0.1);
-  --ink-line-bright: rgba(16, 185, 129, 0.4);
-  --glass-bg: rgba(8, 16, 30, 0.75);
-  --glass-border: rgba(16, 185, 129, 0.25);
-  --glass-highlight: rgba(255, 255, 255, 0.12);
-  --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+  --ink-elevated: #09090c;
+  --ink-surface: #101014;
+  --ink-line: rgba(255, 255, 255, 0.08);
+  --ink-line-bright: rgba(255, 255, 255, 0.22);
+  --glass-bg: rgba(10, 10, 14, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 24px 60px rgba(0, 0, 0, 0.95);
 
-  --paper: #ffffff; /* Pure White */
-  --paper-dim: #cbd5e1;
-  --text: #ffffff;
-  --text-dim: #94a3b8;
-  --mute: #64748b;
+  --paper: #f5f5f7; /* Stark Alabaster White */
+  --paper-dim: #8e8e96;
+  --paper-muted: #52525a;
+  --text: #f5f5f7;
+  --text-dim: #8e8e96;
+  --mute: #52525a;
 
-  /* Forest Green Spectrum */
-  --forest: #047857;
-  --forest-deep: #064e3b;
-  --signal: #10b981;
-  --signal-soft: #34d399;
-  --signal-bright: #00ff88;
-  --signal-glow: rgba(16, 185, 129, 0.35);
+  /* Surgical Ember Vermilion (Utopia Tokyo Accent) */
+  --signal-ember: #ff3b00;
+  --signal: #ff3b00;
+  --signal-soft: #ff5e2e;
+  --signal-bright: #ff3b00;
+  --signal-glow: rgba(255, 59, 0, 0.35);
 
-  /* Red Spectrum */
-  --ruby: #ef4444;
-  --ruby-soft: #f87171;
-  --ruby-bright: #dc2626;
-  --ruby-glow: rgba(239, 68, 68, 0.35);
+  --ruby: #ff3b00;
+  --ruby-soft: #ff6633;
+  --ruby-bright: #ff3b00;
+  --ruby-glow: rgba(255, 59, 0, 0.35);
 
+  --forest: #10b981;
   --cyan: #38bdf8;
   --pass: #10b981;
-  --fail: #ef4444;
-  --focus: #10b981;
-  --warn-bg: rgba(239, 68, 68, 0.15);
-  --deny-bg: rgba(239, 68, 68, 0.22);
-  --pass-bg: rgba(16, 185, 129, 0.15);
+  --fail: #ff3b00;
+  --focus: #ff3b00;
+  --warn-bg: rgba(255, 59, 0, 0.12);
+  --deny-bg: rgba(255, 59, 0, 0.2);
+  --pass-bg: rgba(16, 185, 129, 0.12);
 
   --font-sans: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Consolas", monospace;
@@ -1199,7 +1199,7 @@ a {
   pointer-events: none;
 }
 
-/* Deep Obsidian & Emerald Starlight Ambient Glow (Zero CPU/GPU Overhead) */
+/* Deep Obsidian & Surgical Ember Starlight Ambient Glow (Zero CPU/GPU Overhead) */
 .utopia-starlight-glow {
   position: absolute;
   top: -120px;
@@ -1207,9 +1207,437 @@ a {
   transform: translateX(-50%);
   width: min(1100px, 95vw);
   height: 520px;
-  background: radial-gradient(ellipse at center, rgba(0, 255, 157, 0.06) 0%, rgba(255, 0, 85, 0.02) 45%, transparent 70%);
-  filter: blur(50px);
+  background: radial-gradient(ellipse at center, rgba(255, 59, 0, 0.05) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 70%);
+  filter: blur(60px);
   pointer-events: none;
+}
+
+/* ==========================================================================
+   UTOPIA TOKYO HUD & ARCHITECTURAL GRID PRIMITIVES
+   ========================================================================== */
+
+/* 45-Degree Chamfered SCI-FI Frame */
+.utopia-hud-frame {
+  position: relative;
+  border: 1px solid var(--ink-line);
+  background: var(--ink-elevated);
+  clip-path: polygon(
+    0 16px,
+    16px 0,
+    calc(100% - 16px) 0,
+    100% 16px,
+    100% calc(100% - 16px),
+    calc(100% - 16px) 100%,
+    16px 100%,
+    0 calc(100% - 16px)
+  );
+  overflow: hidden;
+}
+
+.utopia-hud-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+  clip-path: polygon(
+    0 16px,
+    16px 0,
+    calc(100% - 16px) 0,
+    100% 16px,
+    100% calc(100% - 16px),
+    calc(100% - 16px) 100%,
+    16px 100%,
+    0 calc(100% - 16px)
+  );
+}
+
+/* Precision Crosshair Grid Overlay with '+' marks */
+.utopia-cross-grid {
+  position: relative;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* Header GPS Telemetry Strip */
+.utopia-telemetry-header {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--paper-dim);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid var(--ink-line);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+}
+
+.utopia-telemetry-coords {
+  color: var(--signal-ember);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.utopia-telemetry-coords::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--signal-ember);
+  border-radius: 1px;
+}
+
+/* Monumental Typographic Title (Utopia Tokyo Stencil Look) */
+.utopia-monumental-title {
+  font-family: var(--font-mono);
+  font-size: clamp(2.4rem, 1.8rem + 4.5vw, 6.2rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--paper);
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25em;
+}
+
+.utopia-title-solid {
+  color: var(--paper);
+}
+
+.utopia-title-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--paper);
+  text-stroke: 1.5px var(--paper);
+  opacity: 0.85;
+}
+
+/* Brutalist Punch Triplet with Square Red Periods */
+.utopia-punch-triplet {
+  font-family: var(--font-mono);
+  font-size: clamp(1.8rem, 1.4rem + 2.8vw, 4rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: var(--paper);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+}
+
+.utopia-punch-line {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.utopia-punch-dot {
+  color: var(--signal-ember);
+  display: inline-block;
+  margin-left: 0.05em;
+}
+
+/* Precision Corner-Bracketed Button: [ >_EXECUTE_ACTION ] */
+.btn-utopia {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: #000000;
+  border: 1px solid var(--ink-line-bright);
+  padding: 0.85rem 1.6rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  text-decoration: none;
+}
+
+.btn-utopia::before,
+.btn-utopia::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: var(--signal-ember);
+  pointer-events: none;
+  transition: all var(--dur) var(--ease);
+}
+
+.btn-utopia::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--signal-ember);
+  border-left: 2px solid var(--signal-ember);
+}
+
+.btn-utopia::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--signal-ember);
+  border-right: 2px solid var(--signal-ember);
+}
+
+.btn-utopia:hover {
+  background: var(--signal-ember);
+  color: #000000;
+  border-color: var(--signal-ember);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px var(--signal-glow);
+}
+
+.btn-utopia:hover::before,
+.btn-utopia:hover::after {
+  border-color: #000000;
+}
+
+.btn-utopia-ghost {
+  background: transparent;
+  color: var(--paper-dim);
+  border-color: var(--ink-line);
+}
+
+.btn-utopia-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--paper);
+  border-color: var(--paper);
+  box-shadow: none;
+}
+
+/* Measurement Hash Scale: | | | | | | | [ III ] | | | | | | | */
+.utopia-hash-scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--paper-muted);
+}
+
+.utopia-hash-tick {
+  width: 1px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.utopia-hash-tick.active {
+  background: var(--signal-ember);
+  height: 14px;
+}
+
+.utopia-hash-badge {
+  padding: 0.15rem 0.45rem;
+  background: rgba(255, 59, 0, 0.15);
+  border: 1px solid var(--signal-ember);
+  color: var(--signal-ember);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   TOPOGRAPHIC ELEVATION GRID NAVIGATION MAP
+   ========================================================================== */
+.topo-container {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  background: #000000;
+  border: 1px solid var(--ink-line);
+  overflow: hidden;
+  user-select: none;
+}
+
+.topo-canvas {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.topo-canvas:active {
+  cursor: grabbing;
+}
+
+/* Telemetry HUD Bar on Top of Map */
+.topo-hud-telemetry {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
+  z-index: 5;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--paper-dim);
+}
+
+.topo-hud-telemetry > * {
+  pointer-events: auto;
+}
+
+/* Drone GPS Reticle & Crosshair */
+.topo-reticle {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+}
+
+.topo-crosshair {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(255, 59, 0, 0.5);
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease-out;
+}
+
+.topo-crosshair::before,
+.topo-crosshair::after {
+  content: "";
+  position: absolute;
+  background: var(--signal-ember);
+}
+
+.topo-crosshair::before {
+  width: 100%;
+  height: 1px;
+}
+
+.topo-crosshair::after {
+  height: 100%;
+  width: 1px;
+}
+
+/* Flight Controls (Zoom, Reset, Compass) */
+.topo-flight-controls {
+  position: absolute;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 6;
+}
+
+.topo-flight-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(10, 10, 14, 0.9);
+  border: 1px solid var(--ink-line);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+
+.topo-flight-btn:hover {
+  background: var(--signal-ember);
+  color: #000000;
+  border-color: var(--signal-ember);
+}
+
+/* Compass Rose in Top Right */
+.topo-compass {
+  position: absolute;
+  top: 3.25rem;
+  right: 1.25rem;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--ink-line);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--signal-ember);
+  z-index: 5;
+}
+
+/* Cartographic Scale Bar in Bottom Left */
+.topo-scale-bar {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--paper-dim);
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--ink-line);
+}
+
+/* Cartographic Waypoint Survey Drawer */
+.topo-survey-drawer {
+  position: absolute;
+  top: 3rem;
+  left: 1.25rem;
+  width: 320px;
+  max-width: calc(100% - 2.5rem);
+  background: rgba(8, 8, 11, 0.95);
+  border: 1px solid var(--ink-line-bright);
+  padding: 1rem;
+  z-index: 7;
+  font-family: var(--font-mono);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(16px);
+}
+
+.topo-survey-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ink-line);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.topo-survey-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--paper);
+  text-transform: uppercase;
+}
+
+.topo-survey-tier {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(255, 59, 0, 0.15);
+  border: 1px solid var(--signal-ember);
+  color: var(--signal-ember);
+  font-weight: 700;
 }
 
 .landing-nav,

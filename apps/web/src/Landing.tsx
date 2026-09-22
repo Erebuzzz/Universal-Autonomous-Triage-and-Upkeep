@@ -6,73 +6,43 @@ import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
 import { FlipCard } from "./components/FlipCard";
 import { LatticeLoader } from "./components/LatticeLoader";
-import { SpecularButton } from "./components/SpecularButton";
 import { navigate } from "./path";
 import { PrivacyModal } from "./PrivacyModal";
 import { sound } from "./SoundEngine";
 import { ThemeToggle } from "./ThemeToggle";
 
-type Props = {
-  oauthConfigured: boolean;
-  authRequired: boolean;
+interface Props {
+  oauthConfigured?: boolean;
+  canOAuth?: boolean;
+  authRequired?: boolean;
   healthError: string | null;
   busy: boolean;
   onLocalDemo: () => void;
   onMockSignIn: () => void;
-};
+  showMock?: boolean;
+}
 
 const TELEMETRY_STEPS = [
-  {
-    idx: "01",
-    phase: "OBSERVE",
-    model: "Local AST",
-    name: "Repository Ingestion",
-    detail: "Scanned 15 files, package dependencies, and ISSUES.json context.",
-  },
-  {
-    idx: "02",
-    phase: "TRIAGE",
-    model: "Nova Micro",
-    name: "Defect Prioritization",
-    detail: "Ranked high-confidence off-by-one bug in inclusiveRange (confidence: 0.94).",
-  },
-  {
-    idx: "03",
-    phase: "INVESTIGATE",
-    model: "Nova 2 Omni",
-    name: "Root-Cause Isolation",
-    detail: "Determined upper bound loop logic (i < end) excludes target bound.",
-  },
-  {
-    idx: "04",
-    phase: "VERIFY",
-    model: "Sandbox Runner",
-    name: "Regression Test Suite",
-    detail: "Executed node --test in container. 2 passed, 0 failed (duration: 48ms).",
-  },
-  {
-    idx: "05",
-    phase: "PR ARTIFACT",
-    model: "PR Review Bot",
-    name: "Draft Contribution Ready",
-    detail: "Synthesized branch uatu/fix-range-inclusive with verified diff artifact.",
-  },
+  { idx: "01", name: "OBSERVE_INGESTION", model: "Nova Micro", detail: "Repository webhook parsed, AST dependency graph indexed" },
+  { idx: "02", name: "CARTOGRAPHIC_SURVEY", model: "Deterministic", detail: "Elevations calculated, high-risk summits targeted" },
+  { idx: "03", name: "ROOT_CAUSE_ISOLATION", model: "Claude 3.5", detail: "Stack trace pinpointed to off-by-one boundary" },
+  { idx: "04", name: "SYNTHESIS_REMEDIATION", model: "Nova 2 Omni", detail: "Clean unified diff generated with 100% test pass" },
 ];
 
 export function Landing({
   oauthConfigured,
-  authRequired,
-  healthError,
-  busy,
-  onLocalDemo,
+  canOAuth: explicitCanOAuth,
   onMockSignIn,
+  onLocalDemo,
+  busy,
+  healthError,
+  showMock = false,
 }: Props) {
-  const canOAuth = oauthConfigured;
-  const showMock = flags.mockAuth || !oauthConfigured;
+  const canOAuth = explicitCanOAuth ?? oauthConfigured ?? false;
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
-  const brain = demoBrainMap();
+  const [demoBrain] = useState(() => demoBrainMap());
 
   useEffect(() => {
     if (isPaused) return;
@@ -83,22 +53,38 @@ export function Landing({
   }, [isPaused]);
 
   return (
-    <div className="landing">
+    <div className="landing utopia-cross-grid">
+      {/* Background Starlight Aura */}
       <div className="landing-atmosphere" aria-hidden>
         <div className="utopia-matrix-grid" />
         <div className="utopia-meridian-lines" />
         <div className="utopia-starlight-glow" />
       </div>
 
+      {/* Topmost Utopia Tokyo GPS Telemetry Strip */}
+      <div className="utopia-telemetry-header">
+        <div className="utopia-telemetry-coords">
+          [ 35.6762° N // 139.6503° E ]
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
+          <span>SECTOR: GLOBAL_OBSERVATION</span>
+          <span className="utopia-telemetry-coords">
+            STATUS: SURVEILLANCE_ACTIVE
+          </span>
+          <span>VERSION: 2.4.0-RC.1</span>
+        </div>
+      </div>
+
+      {/* Primary Navigation */}
       <header className="landing-nav">
         <BrandLockup size="lg" />
 
-        <nav style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginLeft: "auto" }}>
+        <nav style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginLeft: "auto", flexWrap: "wrap" }}>
           <a href="#how-it-works" className="landing-nav-link">
-            How It Works
+            [ 01 // LIFECYCLE ]
           </a>
-          <a href="#neural-brain" className="landing-nav-link">
-            Neural Brain
+          <a href="#cartography" className="landing-nav-link">
+            [ 02 // CARTOGRAPHY ]
           </a>
           <a
             href="/docs"
@@ -108,222 +94,214 @@ export function Landing({
               navigate("/docs");
             }}
           >
-            User Docs
+            [ 03 // DOCS ]
           </a>
           <button
             type="button"
             className="landing-nav-link landing-nav-btn"
             onClick={() => setShowPrivacy(true)}
           >
-            Privacy
+            [ 04 // PRIVACY ]
           </button>
           <AudioToggle />
           <ThemeToggle />
         </nav>
       </header>
 
-      {/* Hero Section */}
-      <main className="landing-hero">
-        <div className="landing-hero-content">
-          <div className="hero-beacon">
-            <span className="beacon-dot" />
-            Celestial Observatory Active · ap-south-1
-          </div>
+      {/* Hero Chamber */}
+      <main className="landing-hero" style={{ padding: "2rem 1.5rem 4rem" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: "2.5rem" }}>
+          
+          {/* Top Row: Monumental Typography & Narrative Briefing */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem", alignItems: "center" }}>
+            
+            {/* Left Column: Monumental Stencil & Punch Triplet */}
+            <div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.2em", color: "var(--signal-ember)", marginBottom: "0.75rem" }}>
+                [ COSMIC AUTONOMOUS UPKEEP RUNTIME ]
+              </div>
 
-          <h1 className="landing-brand">
-            The Celestial Watcher of Codebases:{" "}
-            <span className="brand-duotone-ua">UA</span>
-            <span className="brand-duotone-tu">TU</span>
-          </h1>
-          <p className="landing-tagline">Observe · Understand · Repair · Contribute</p>
+              <h1 className="utopia-monumental-title">
+                <span className="utopia-title-solid">UATU</span>
+                <span className="utopia-title-outline">WATCHER</span>
+              </h1>
 
-          <p className="landing-lede">
-            UATU continuously monitors your repositories, maps an organic biological neural tree of your
-            architecture, isolates bugs and CVE advisories, and synthesizes minimal, regression-tested
-            pull requests you review with total merge confidence.
-          </p>
-
-          <div className="landing-cta" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-            {canOAuth ? (
-              <SpecularButton
-                onClick={() => {
-                  sound.playCelestialChime();
-                  window.location.href = api.githubLoginUrl();
-                }}
-                tint="#00ff9d"
-                lineColor="#ffffff"
-                baseColor="#10b981"
-                intensity={1.3}
-                size="lg"
-                disabled={busy}
-              >
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                    />
-                  </svg>
-                  <span>Sign in with GitHub</span>
+              {/* Brutalist Punch Triplet with Square Red Dots */}
+              <div className="utopia-punch-triplet" style={{ margin: "1.25rem 0" }}>
+                <span className="utopia-punch-line">
+                  OBSERVED<span className="utopia-punch-dot">.</span>
                 </span>
-              </SpecularButton>
-            ) : (
-              <SpecularButton
-                onClick={() => {
-                  sound.playCelestialChime();
-                  onMockSignIn();
-                }}
-                tint="#00ff9d"
-                lineColor="#ffffff"
-                baseColor="#10b981"
-                intensity={1.2}
-                size="lg"
-                disabled={busy}
-              >
-                <span>{flags.mockAuth ? "Enter with Mock Session" : "Continue with Demo"}</span>
-              </SpecularButton>
-            )}
+                <span className="utopia-punch-line">
+                  TRIAGED<span className="utopia-punch-dot">.</span>
+                </span>
+                <span className="utopia-punch-line">
+                  REPAIRED<span className="utopia-punch-dot">.</span>
+                </span>
+              </div>
 
-            {canOAuth && !authRequired && (
-              <button
-                className="btn btn-ghost btn-lg"
-                type="button"
-                disabled={busy}
-                onClick={onLocalDemo}
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+              {/* Corner-Bracketed Action Controls */}
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", marginTop: "1.75rem" }}>
+                {canOAuth ? (
+                  <a
+                    href={api.githubLoginUrl()}
+                    onClick={() => sound.playCelestialChime()}
+                    className="btn-utopia"
+                  >
+                    &gt;_EXECUTE_TRIAGE
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playCelestialChime();
+                      onMockSignIn();
+                    }}
+                    className="btn-utopia"
+                    disabled={busy}
+                  >
+                    &gt;_{flags.mockAuth ? "MOCK_SESSION" : "EXECUTE_DEMO"}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="btn-utopia btn-utopia-ghost"
+                  onClick={onLocalDemo}
+                  disabled={busy}
                 >
-                  <polyline points="4 17 10 11 4 5" />
-                  <line x1="12" y1="19" x2="20" y2="19" />
-                </svg>
-                <span>Local Fixture Demo</span>
-              </button>
-            )}
+                  &gt;_LOCAL_FIXTURE
+                </button>
 
-            {showMock && canOAuth && (
-              <button
-                className="btn btn-ghost btn-lg"
-                type="button"
-                disabled={busy}
-                onClick={onMockSignIn}
-              >
-                Mock Session
-              </button>
-            )}
+                {showMock && canOAuth && (
+                  <button
+                    type="button"
+                    className="btn-utopia btn-utopia-ghost"
+                    onClick={onMockSignIn}
+                    disabled={busy}
+                  >
+                    &gt;_MOCK_SESSION
+                  </button>
+                )}
+              </div>
 
-            <button
-              className="btn btn-ghost btn-lg"
-              type="button"
-              onClick={() => navigate("/docs")}
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-              </svg>
-              <span>User Guide</span>
-            </button>
-          </div>
-
-          {healthError && (
-            <p className="landing-health-warn" role="status">
-              API unreachable: {healthError}. You can test all UI flows via the instant local demo.
-            </p>
-          )}
-        </div>
-
-        {/* Interactive Telemetry Preview with LatticeLoader */}
-        <div className="telemetry-card" aria-label="Simulated autonomous triage telemetry">
-          <div className="telemetry-header">
-            <div className="terminal-dots">
-              <span className="terminal-dot red" />
-              <span className="terminal-dot amber" />
-              <span className="terminal-dot green" />
+              {healthError && (
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--signal-ember)", marginTop: "1rem" }} role="status">
+                  [!] API STATUS: {healthError} · LOCAL FIXTURE FULLY OPERATIONAL
+                </p>
+              )}
             </div>
-            <span className="telemetry-title">Autonomous Triage Telemetry</span>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
-              <LatticeLoader
-                status={isPaused ? "done" : "working"}
-                pattern="orbit"
-                grid={3}
-                color="#00ff9d"
-              />
-              <button
-                type="button"
-                className="telemetry-ctrl-btn"
-                onClick={() => setIsPaused((p) => !p)}
-                title={isPaused ? "Resume simulation" : "Pause simulation"}
-              >
-                {isPaused ? "Play" : "Pause"}
-              </button>
-              <button
-                type="button"
-                className="telemetry-ctrl-btn"
-                onClick={() => setActiveStep((prev) => (prev + 1) % TELEMETRY_STEPS.length)}
-                title="Step forward"
-              >
-                Step
-              </button>
-            </div>
-          </div>
 
-          <div className="telemetry-body">
-            {TELEMETRY_STEPS.map((step, i) => {
-              const isActive = i === activeStep;
-              const isDone = i < activeStep;
-              return (
-                <div
-                  key={step.idx}
-                  className={`telemetry-step ${isActive ? "active" : ""} ${isDone ? "done" : ""}`}
-                >
-                  <span className="telemetry-step-idx">{step.idx}</span>
-                  <div className="telemetry-step-content">
-                    <div className="telemetry-step-name">
-                      <span>{step.name}</span>
-                      <span className="telemetry-step-model">{step.model}</span>
-                    </div>
-                    <div className="telemetry-step-detail">{step.detail}</div>
+            {/* Right Column: Mission Briefing & Real-time Ingestion Pipeline */}
+            <div className="utopia-hud-frame" style={{ padding: "1.5rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--ink-line)", paddingBottom: "0.6rem", marginBottom: "1rem" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--signal-ember)", fontWeight: 700, letterSpacing: "0.14em" }}>
+                  [ MISSION BRIEFING // THESIS ]
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--paper-dim)" }}>
+                  LATENCY: &lt;42ms
+                </span>
+              </div>
+
+              <p style={{ fontFamily: "var(--font-sans)", color: "var(--paper-dim)", fontSize: "0.95rem", lineHeight: 1.65, margin: "0 0 1.25rem 0" }}>
+                A silent watcher observing the multiverse of code. UATU continuously maps repository entropy,
+                projects architectural files onto an interactive 2.5D topographic elevation grid, targets high-risk
+                summit bugs and CVE advisories, and synthesizes minimal, verified pull requests without human prompting.
+              </p>
+
+              {/* Mini Simulation Pipeline */}
+              <div style={{ background: "rgba(0, 0, 0, 0.7)", border: "1px solid var(--ink-line)", padding: "0.75rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--paper)", fontWeight: 700 }}>
+                    ACTIVE TELEMETRY STREAM
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <LatticeLoader status={isPaused ? "done" : "working"} pattern="orbit" grid={3} color="#ff3b00" />
+                    <button
+                      type="button"
+                      onClick={() => setIsPaused((p) => !p)}
+                      style={{ background: "none", border: "none", color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontSize: "0.65rem", cursor: "pointer" }}
+                    >
+                      [{isPaused ? "RESUME" : "PAUSE"}]
+                    </button>
                   </div>
                 </div>
-              );
-            })}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  {TELEMETRY_STEPS.map((step, i) => (
+                    <div
+                      key={step.idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.6rem",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.68rem",
+                        color: i === activeStep ? "var(--paper)" : "var(--paper-muted)",
+                        background: i === activeStep ? "rgba(255, 59, 0, 0.12)" : "transparent",
+                        padding: "0.25rem 0.4rem",
+                        borderLeft: i === activeStep ? "2px solid var(--signal-ember)" : "2px solid transparent",
+                      }}
+                    >
+                      <span style={{ color: "var(--signal-ember)", fontWeight: 700 }}>{step.idx}</span>
+                      <span style={{ fontWeight: 700 }}>{step.name}</span>
+                      <span style={{ marginLeft: "auto", color: "var(--paper-dim)" }}>{step.model}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="telemetry-footer">
-            <span>Target: demo-vulnerable (sandbox)</span>
-            <span style={{ color: "var(--signal-bright)" }}>Passed (2/2 checks)</span>
+          {/* Centerpiece: Interactive Topographic Elevation Grid Navigation Map */}
+          <div id="cartography">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <span className="utopia-hash-badge">[ II // SPATIAL CARTOGRAPHY ]</span>
+                <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "1.1rem", margin: 0, letterSpacing: "0.08em", color: "var(--paper)" }}>
+                  TOPOGRAPHIC REPOSITORY ELEVATION MAP
+                </h2>
+              </div>
+              <div className="utopia-hash-scale">
+                <span className="utopia-hash-tick active" />
+                <span className="utopia-hash-tick" />
+                <span className="utopia-hash-tick" />
+                <span className="utopia-hash-badge">SECTOR: 01-ALPHA</span>
+                <span className="utopia-hash-tick" />
+                <span className="utopia-hash-tick" />
+                <span className="utopia-hash-tick active" />
+              </div>
+            </div>
+
+            {/* Embedded Live Topographic Navigation Map */}
+            <BrainMapView brain={demoBrain} height={540} />
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.6rem", fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--paper-dim)", flexWrap: "wrap", gap: "0.5rem" }}>
+              <span>
+                TIP: DRAG TO PAN · MOUSE WHEEL TO ADJUST ALTITUDE · DOUBLE-CLICK WAYPOINT FOR ACCELERATED FLY-IN
+              </span>
+              <span style={{ color: "var(--signal-ember)" }}>
+                ● 14 SURVEY WAYPOINTS ACTIVE · 1 CRITICAL SUMMIT ISOLATED
+              </span>
+            </div>
           </div>
+
         </div>
       </main>
 
       {/* How It Works Section with 3D Glowing FlipCards */}
-      <section id="how-it-works" className="landing-section">
-        <div className="section-eyebrow">I // The Upkeep Lifecycle</div>
-        <h2 className="section-heading">How UATU Keeps Repositories Healthy</h2>
-        <p className="section-sub">
-          Every triage run follows a disciplined engineering lifecycle. Zero code is modified without an isolated
-          sandbox and verification pass. Click or tilt any card to explore architectural specifications.
+      <section id="how-it-works" className="landing-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+          <span className="utopia-hash-badge">[ I // UPKEEP LIFECYCLE ]</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.14em", color: "var(--paper-dim)" }}>
+            DISCIPLINED REPOSITORY HEALTH PROTOCOL
+          </span>
+        </div>
+        <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem, 1.2rem + 1.5vw, 2.4rem)", fontWeight: 800, color: "var(--paper)", margin: "0 0 0.75rem 0", letterSpacing: "0.06em" }}>
+          HOW UATU KEEPS CODEBASES HEALTHY
+        </h2>
+        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
+          Every upkeep run executes in an isolated sandbox. Zero code is modified without a passing verification test suite.
+          Click or tilt any card to inspect the architectural specifications.
         </p>
 
         <div className="feature-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem" }}>
@@ -331,37 +309,34 @@ export function Landing({
             height={310}
             tilt={true}
             glare={true}
-            glareOpacity={0.25}
-            radius={16}
+            glareOpacity={0.2}
+            radius={8}
             front={
-              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem" }}>
-                <span className="feature-idx">01</span>
-                <h3>Connect &amp; Scope</h3>
-                <p>
-                  Link target repositories through fine-grained GitHub App permissions. Repositories start in a passive,
-                  read-only inspection state.
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#060608" }}>
+                <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800 }}>01</span>
+                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem" }}>Connect &amp; Scope</h3>
+                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem" }}>
+                  Link repositories through fine-grained GitHub App permissions. Repositories initialize in passive,
+                  zero-mutation surveillance mode.
                 </p>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="feature-tag">Passive by Default</span>
-                  <span className="flip-hint-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                      <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                    </svg>
-                    Click to Flip
+                  <span className="utopia-hash-badge" style={{ fontSize: "0.62rem" }}>PASSIVE BY DEFAULT</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--signal-ember)" }}>
+                    CLICK TO FLIP ↻
                   </span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem", borderColor: "rgba(0, 255, 157, 0.4)" }}>
-                <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 01</span>
-                <h3>Security Enclave</h3>
-                <p style={{ fontSize: "0.85rem", lineHeight: 1.55 }}>
-                  Minted installation tokens expire after 60 minutes. Read-only permissions allow initial AST indexing without write grants.
-                </p>
-                <div style={{ marginTop: "auto" }}>
-                  <span className="feature-tag">Capability-Scoped Grants</span>
-                </div>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#0c0c10" }}>
+                <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.9rem", margin: "0 0 0.5rem 0" }}>
+                  SPEC // PASSIVE SCOPING
+                </h4>
+                <ul style={{ fontSize: "0.78rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6 }}>
+                  <li>Read-only repository access token expires in 60 mins.</li>
+                  <li>Branch protection rules respected unconditionally.</li>
+                  <li>Explicit write-grant required before feature branch generation.</li>
+                </ul>
               </div>
             }
           />
@@ -370,37 +345,34 @@ export function Landing({
             height={310}
             tilt={true}
             glare={true}
-            glareOpacity={0.25}
-            radius={16}
+            glareOpacity={0.2}
+            radius={8}
             front={
-              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem" }}>
-                <span className="feature-idx">02</span>
-                <h3>Autonomous Diagnosis</h3>
-                <p>
-                  UATU scans your AST tree, evaluates package dependencies, and leverages Amazon Nova Micro to triage and
-                  prioritize actionable defects.
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#060608" }}>
+                <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800 }}>02</span>
+                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem" }}>Survey &amp; Plan</h3>
+                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem" }}>
+                  Autonomous static analysis maps code density and projects AST nodes onto the 2.5D elevation grid,
+                  identifying high-risk vulnerability peaks.
                 </p>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="feature-tag">Smart Complexity Router</span>
-                  <span className="flip-hint-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                      <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                    </svg>
-                    Click to Flip
+                  <span className="utopia-hash-badge" style={{ fontSize: "0.62rem" }}>AST TOPOGRAPHY</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--signal-ember)" }}>
+                    CLICK TO FLIP ↻
                   </span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem", borderColor: "rgba(0, 255, 157, 0.4)" }}>
-                <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 02</span>
-                <h3>AST &amp; Dependency Graph</h3>
-                <p style={{ fontSize: "0.85rem", lineHeight: 1.55 }}>
-                  Heuristics and Bedrock LLM classify bugs into severity tiers. Security vulnerabilities match against GitHub Advisory Database.
-                </p>
-                <div style={{ marginTop: "auto" }}>
-                  <span className="feature-tag">Multi-Model Routing</span>
-                </div>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#0c0c10" }}>
+                <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.9rem", margin: "0 0 0.5rem 0" }}>
+                  SPEC // CARTOGRAPHIC PLANNING
+                </h4>
+                <ul style={{ fontSize: "0.78rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6 }}>
+                  <li>Deterministic AST parsing via Babel and TypeScript compiler API.</li>
+                  <li>Multi-file dependency graph mapping with circular loop detection.</li>
+                  <li>Risk elevation assigned from CVSS scores and git churn metrics.</li>
+                </ul>
               </div>
             }
           />
@@ -409,37 +381,34 @@ export function Landing({
             height={310}
             tilt={true}
             glare={true}
-            glareOpacity={0.25}
-            radius={16}
+            glareOpacity={0.2}
+            radius={8}
             front={
-              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem" }}>
-                <span className="feature-idx">03</span>
-                <h3>Sandboxed Repair</h3>
-                <p>
-                  Candidate diffs are synthesized by Amazon Nova 2 Omni and tested inside single-tenant filesystem sandboxes
-                  with strict path allowlists.
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#060608" }}>
+                <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800 }}>03</span>
+                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem" }}>Sandbox Verification</h3>
+                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem" }}>
+                  Patches synthesize and test inside single-tenant ephemeral Linux sandboxes. Broken tests cause immediate
+                  remediation rejection.
                 </p>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="feature-tag">Isolated Sandboxes</span>
-                  <span className="flip-hint-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                      <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                    </svg>
-                    Click to Flip
+                  <span className="utopia-hash-badge" style={{ fontSize: "0.62rem" }}>ZERO CONTAMINATION</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--signal-ember)" }}>
+                    CLICK TO FLIP ↻
                   </span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem", borderColor: "rgba(0, 255, 157, 0.4)" }}>
-                <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 03</span>
-                <h3>Zero Host Leakage</h3>
-                <p style={{ fontSize: "0.85rem", lineHeight: 1.55 }}>
-                  Ephemeral sandbox clones run test runners with strict timeouts. Any modified files outside the capability allowlist trigger instant task abort.
-                </p>
-                <div style={{ marginTop: "auto" }}>
-                  <span className="feature-tag">Path Allowlist Guard</span>
-                </div>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#0c0c10" }}>
+                <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.9rem", margin: "0 0 0.5rem 0" }}>
+                  SPEC // SANDBOX ISOLATION
+                </h4>
+                <ul style={{ fontSize: "0.78rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6 }}>
+                  <li>Volatile memory sandboxes with strict command allowlists.</li>
+                  <li>Network egress locked down during test suite execution.</li>
+                  <li>Complete filesystem destruction upon triage termination.</li>
+                </ul>
               </div>
             }
           />
@@ -448,154 +417,192 @@ export function Landing({
             height={310}
             tilt={true}
             glare={true}
-            glareOpacity={0.25}
-            radius={16}
+            glareOpacity={0.2}
+            radius={8}
             front={
-              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem" }}>
-                <span className="feature-idx">04</span>
-                <h3>Review &amp; Merge</h3>
-                <p>
-                  Verified fixes are opened as reviewable GitHub draft pull requests complete with test logs. You maintain
-                  complete merge authority.
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#060608" }}>
+                <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800 }}>04</span>
+                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem" }}>Human Authority</h3>
+                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem" }}>
+                  UATU never merges code autonomously. Verified fixes are submitted as draft Pull Requests with telemetry
+                  logs for your team to review.
                 </p>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="feature-tag">Human in the Loop</span>
-                  <span className="flip-hint-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                      <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                    </svg>
-                    Click to Flip
+                  <span className="utopia-hash-badge" style={{ fontSize: "0.62rem" }}>DRAFT PULL REQUEST</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--signal-ember)" }}>
+                    CLICK TO FLIP ↻
                   </span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem", borderColor: "rgba(0, 255, 157, 0.4)" }}>
-                <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 04</span>
-                <h3>Pass Certification</h3>
-                <p style={{ fontSize: "0.85rem", lineHeight: 1.55 }}>
-                  Draft PRs include detailed test reproduction logs, root-cause rationale, and rollback instructions. Zero auto-merges are ever performed.
-                </p>
-                <div style={{ marginTop: "auto" }}>
-                  <span className="feature-tag">Zero Auto-Merge Rule</span>
-                </div>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#0c0c10" }}>
+                <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.9rem", margin: "0 0 0.5rem 0" }}>
+                  SPEC // TOTAL HUMAN CONTROL
+                </h4>
+                <ul style={{ fontSize: "0.78rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6 }}>
+                  <li>Feature branches prefixed with uatu/ for instant identification.</li>
+                  <li>Complete diff preview with unit test coverage report.</li>
+                  <li>One-click accept, modify, or reject via GitHub PR UI.</li>
+                </ul>
               </div>
             }
           />
-        </div>
-      </section>
-
-      {/* Neural Knowledge Brain Showcase */}
-      <section id="neural-brain" className="landing-section">
-        <div className="section-eyebrow">II // Spatial Code Knowledge</div>
-        <h2 className="section-heading">
-          Biological Neural Brain: Spatial Code Knowledge
-        </h2>
-        <p className="section-sub">
-          Unlike static linters that forget past runs, UATU builds an organic biological neural tree representing
-          your directories, files, vulnerabilities, and verified patches. Double-click any node or click the Synaptic
-          Gateways (+/-) to expand and dramatically zoom into sub-branches. Double-click again to collapse.
-        </p>
-
-        <div style={{ borderRadius: "var(--radius-lg)", overflow: "hidden", border: "1px solid var(--ink-line)" }}>
-          <BrainMapView brain={brain} />
         </div>
       </section>
 
       {/* Foundation Intelligence Section */}
-      <section className="landing-section">
-        <div className="section-eyebrow">III // Foundation Intelligence</div>
-        <h2 className="section-heading">Powered by Leading AI Models</h2>
-        <p className="section-sub">
-          The autonomous Smart Complexity Router routes tasks to the optimal model based on task difficulty, or you can
-          choose specific models for your codebase.
+      <section className="landing-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+          <span className="utopia-hash-badge">[ III // FOUNDATION INTELLIGENCE ]</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.14em", color: "var(--paper-dim)" }}>
+            MULTI-MODEL COMPLEXITY ROUTER
+          </span>
+        </div>
+        <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem, 1.2rem + 1.5vw, 2.4rem)", fontWeight: 800, color: "var(--paper)", margin: "0 0 0.75rem 0", letterSpacing: "0.06em" }}>
+          POWERED BY ENTERPRISE FOUNDATION AI
+        </h2>
+        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
+          The autonomous Smart Complexity Router dispatches tasks to the optimal foundation model based on problem complexity,
+          optimizing for cost, speed, and deep reasoning accuracy.
         </p>
 
-        <div className="models-showcase-grid">
-          <div className="model-showcase-card">
-            <span className="model-tier-chip tier-flagship">Flagship Synthesis</span>
-            <h3>Amazon Nova 2 Omni</h3>
-            <p>Next-generation high-capacity reasoning model for deep root-cause isolation and unified diff generation.</p>
-            <div className="model-metrics">
+        <div className="models-showcase-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
+          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
+            <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              FLAGSHIP SYNTHESIS
+            </span>
+            <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.2rem" }}>Amazon Nova 2 Omni</h3>
+            <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6 }}>
+              Next-generation high-capacity reasoning model for deep root-cause isolation and unified diff generation across complex repos.
+            </p>
+            <div className="model-metrics" style={{ borderTop: "1px solid var(--ink-line)", paddingTop: "0.75rem", marginTop: "1rem" }}>
               <span className="metric-pill"><span className="metric-key">TPM:</span> 8M</span>
               <span className="metric-divider" aria-hidden="true">|</span>
               <span className="metric-pill"><span className="metric-key">RPM:</span> 20</span>
               <span className="metric-divider" aria-hidden="true">|</span>
-              <span className="metric-pill"><span className="metric-key">Tier:</span> Flagship</span>
+              <span className="metric-pill"><span className="metric-key">TIER:</span> Flagship</span>
             </div>
           </div>
 
-          <div className="model-showcase-card">
-            <span className="model-tier-chip tier-flagship">Deep Logic</span>
-            <h3>Claude 3.5 Sonnet v2</h3>
-            <p>Industry standard for intricate functional code logic and nuanced edge-case bug fixes.</p>
-            <div className="model-metrics">
+          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
+            <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              DEEP LOGIC
+            </span>
+            <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.2rem" }}>Claude 3.5 Sonnet v2</h3>
+            <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6 }}>
+              Industry benchmark for intricate functional code logic, complex dependency graphs, and nuanced edge-case bug fixes.
+            </p>
+            <div className="model-metrics" style={{ borderTop: "1px solid var(--ink-line)", paddingTop: "0.75rem", marginTop: "1rem" }}>
               <span className="metric-pill"><span className="metric-key">TPM:</span> 800K</span>
               <span className="metric-divider" aria-hidden="true">|</span>
               <span className="metric-pill"><span className="metric-key">RPM:</span> 1</span>
               <span className="metric-divider" aria-hidden="true">|</span>
-              <span className="metric-pill"><span className="metric-key">Tier:</span> Flagship</span>
+              <span className="metric-pill"><span className="metric-key">TIER:</span> Flagship</span>
             </div>
           </div>
 
-          <div className="model-showcase-card">
-            <span className="model-tier-chip tier-fast">High Throughput</span>
-            <h3>Amazon Nova Micro</h3>
-            <p>Ultra-low latency inference for rapid AST classification, issue triage, and next-action planning.</p>
-            <div className="model-metrics">
+          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
+            <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              HIGH THROUGHPUT
+            </span>
+            <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.2rem" }}>Amazon Nova Micro</h3>
+            <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6 }}>
+              Ultra-low latency inference for rapid AST classification, issue webhook triage, and continuous next-action planning.
+            </p>
+            <div className="model-metrics" style={{ borderTop: "1px solid var(--ink-line)", paddingTop: "0.75rem", marginTop: "1rem" }}>
               <span className="metric-pill"><span className="metric-key">TPM:</span> 400K</span>
               <span className="metric-divider" aria-hidden="true">|</span>
               <span className="metric-pill"><span className="metric-key">RPM:</span> 20</span>
               <span className="metric-divider" aria-hidden="true">|</span>
-              <span className="metric-pill"><span className="metric-key">Tier:</span> Fast</span>
+              <span className="metric-pill"><span className="metric-key">TIER:</span> Fast</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Safety & Security Guarantees */}
-      <section className="landing-section">
-        <div className="section-eyebrow">IV // Security Guarantees</div>
-        <h2 className="section-heading">Engineered for Absolute Trust</h2>
-        <p className="section-sub">Your code is private and protected by cryptographic boundaries.</p>
+      {/* Security Guarantees */}
+      <section className="landing-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+          <span className="utopia-hash-badge">[ IV // SECURITY GUARANTEES ]</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.14em", color: "var(--paper-dim)" }}>
+            CRYPTOGRAPHIC BOUNDARIES
+          </span>
+        </div>
+        <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem, 1.2rem + 1.5vw, 2.4rem)", fontWeight: 800, color: "var(--paper)", margin: "0 0 0.75rem 0", letterSpacing: "0.06em" }}>
+          ENGINEERED FOR ABSOLUTE TRUST
+        </h2>
+        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
+          Your code is confidential and strictly protected by ephemeral memory sandboxes and enterprise AWS Bedrock boundaries.
+        </p>
 
-        <div className="trust-grid">
-          <div className="trust-card">
-            <strong>Zero Model Training</strong>
-            <p>Your proprietary code and commit diffs are never stored or used to train any AI foundation models.</p>
+        <div className="trust-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem" }}>
+          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "#060608" }}>
+            <strong style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", display: "block", marginBottom: "0.4rem" }}>
+              Zero Model Training
+            </strong>
+            <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6, margin: 0 }}>
+              Your proprietary code and commit diffs are never stored, logged, or used to train or fine-tune public foundation models.
+            </p>
           </div>
-          <div className="trust-card">
-            <strong>Zero Auto-Merge</strong>
-            <p>UATU never requests administrative merge rights; all changes are submitted as reviewable pull requests.</p>
+
+          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "#060608" }}>
+            <strong style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", display: "block", marginBottom: "0.4rem" }}>
+              Zero Auto-Merge
+            </strong>
+            <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6, margin: 0 }}>
+              UATU never requests merge permissions. All changes are submitted as reviewable draft pull requests for human sign-off.
+            </p>
           </div>
-          <div className="trust-card">
-            <strong>Isolated Sandboxes</strong>
-            <p>All test runs and patches execute inside ephemeral temporary directories destroyed after each task.</p>
+
+          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "#060608" }}>
+            <strong style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", display: "block", marginBottom: "0.4rem" }}>
+              Ephemeral Sandboxes
+            </strong>
+            <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6, margin: 0 }}>
+              All tests and patch verifications run inside temporary single-tenant directories destroyed immediately upon task termination.
+            </p>
           </div>
-          <div className="trust-card">
-            <strong>Tenant Partitioning</strong>
-            <p>Repository memories and grants are partitioned strictly by your authenticated GitHub User ID.</p>
+
+          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "#060608" }}>
+            <strong style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", display: "block", marginBottom: "0.4rem" }}>
+              Tenant Cryptographic Partitioning
+            </strong>
+            <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6, margin: 0 }}>
+              Repository memories, capability grants, and audit logs are partitioned strictly by your authenticated GitHub User ID.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="landing-foot">
-        <BrandLockup size="sm" variant="tagline" />
+      {/* Telemetry Footer with Ocular Monolith Seal */}
+      <footer className="landing-foot" style={{ borderTop: "1px solid var(--ink-line)", padding: "2.5rem 1.5rem", maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem" }}>
+        <BrandLockup size="md" variant="tagline" />
 
-        <div className="landing-foot-nav">
-          <button type="button" onClick={() => navigate("/docs")}>
-            Documentation ↗
+        <div className="utopia-hash-scale" style={{ display: "flex", alignItems: "center" }}>
+          <span className="utopia-hash-tick active" />
+          <span className="utopia-hash-tick" />
+          <span className="utopia-hash-tick" />
+          <span className="utopia-hash-badge">SYSTEM: ONLINE</span>
+          <span className="utopia-hash-tick" />
+          <span className="utopia-hash-tick" />
+          <span className="utopia-hash-tick active" />
+        </div>
+
+        <div className="landing-foot-nav" style={{ display: "flex", gap: "1.25rem", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
+          <button type="button" onClick={() => navigate("/docs")} style={{ background: "none", border: "none", color: "var(--paper-dim)", cursor: "pointer" }}>
+            DOCUMENTATION ↗
           </button>
-          <button type="button" onClick={() => setShowPrivacy(true)}>
-            Privacy Policy ↗
+          <button type="button" onClick={() => setShowPrivacy(true)} style={{ background: "none", border: "none", color: "var(--paper-dim)", cursor: "pointer" }}>
+            PRIVACY POLICY ↗
           </button>
           <a
             href="https://github.com/Erebuzzz/Universal-Autonomous-Triage-and-Upkeep"
             target="_blank"
             rel="noreferrer"
+            style={{ color: "var(--paper-dim)", textDecoration: "none" }}
           >
-            GitHub Repository ↗
+            GITHUB REPOSITORY ↗
           </a>
         </div>
       </footer>
@@ -605,3 +612,5 @@ export function Landing({
     </div>
   );
 }
+
+export default Landing;

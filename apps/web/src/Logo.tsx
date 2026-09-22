@@ -4,6 +4,11 @@ interface LogoProps {
   glow?: boolean;
 }
 
+/**
+ * The All-Seeing Ocular Monolith
+ * A minimalist geometric watcher symbol inscribed in an architectural navigation seal
+ * with cardinal ticks, precision aperture arcs, and a surgical ember targeting pupil.
+ */
 export function Logo({ size = 36, className = "", glow = true }: LogoProps) {
   return (
     <div
@@ -23,27 +28,16 @@ export function Logo({ size = 36, className = "", glow = true }: LogoProps) {
         width={size}
         height={size}
         className="uatu-logo-svg"
-        aria-label="UATU Sacred Monolithic Monogram"
+        aria-label="UATU All-Seeing Ocular Monolith"
       >
         <defs>
-          <radialGradient id="celestial-core-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#00ff9d" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#00ff9d" stopOpacity="0" />
+          <radialGradient id="ocular-ember-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ff3b00" stopOpacity="0.9" />
+            <stop offset="45%" stopColor="#ff3b00" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#ff3b00" stopOpacity="0" />
           </radialGradient>
-          <radialGradient id="celestial-crimson-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ff0055" stopOpacity="0.8" />
-            <stop offset="60%" stopColor="#ff0055" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#ff0055" stopOpacity="0" />
-          </radialGradient>
-          <filter id="monolith-neon-emerald" x="-30%" y="-30%" width="160%" height="160%">
+          <filter id="ocular-filter" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id="monolith-neon-crimson" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="2.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -51,84 +45,102 @@ export function Logo({ size = 36, className = "", glow = true }: LogoProps) {
           </filter>
         </defs>
 
-        {/* Ambient Celestial Aura */}
-        <circle cx="50" cy="50" r="44" fill="url(#celestial-core-glow)" />
+        {/* Ambient Targeting Glow */}
+        {glow && <circle cx="50" cy="50" r="42" fill="url(#ocular-ember-glow)" opacity="0.35" />}
 
-        {/* Outer Monolithic U Profile in Architectural Sacred Geometry */}
+        {/* Outer Architectural Navigation Ring */}
+        <circle
+          cx="50"
+          cy="50"
+          r="45"
+          stroke="#f5f5f7"
+          strokeWidth="1.2"
+          strokeOpacity="0.3"
+        />
+
+        {/* Outer Concentric Ticks and Graduation Ring */}
+        <circle
+          cx="50"
+          cy="50"
+          r="41"
+          stroke="#f5f5f7"
+          strokeWidth="0.8"
+          strokeDasharray="2 4"
+          strokeOpacity="0.4"
+        />
+
+        {/* Cardinal Navigation Orientation Marks (N, S, E, W) */}
+        <line x1="50" y1="3" x2="50" y2="10" stroke="#ff3b00" strokeWidth="2" strokeLinecap="square" />
+        <line x1="50" y1="90" x2="50" y2="97" stroke="#f5f5f7" strokeWidth="1.5" strokeOpacity="0.5" strokeLinecap="square" />
+        <line x1="3" y1="50" x2="10" y2="50" stroke="#f5f5f7" strokeWidth="1.5" strokeOpacity="0.5" strokeLinecap="square" />
+        <line x1="90" y1="50" x2="97" y2="50" stroke="#f5f5f7" strokeWidth="1.5" strokeOpacity="0.5" strokeLinecap="square" />
+
+        {/* Sub-cardinal Micro Ticks (NE, NW, SE, SW) */}
+        <line x1="20" y1="20" x2="23" y2="23" stroke="#f5f5f7" strokeWidth="1" strokeOpacity="0.35" />
+        <line x1="80" y1="20" x2="77" y2="23" stroke="#f5f5f7" strokeWidth="1" strokeOpacity="0.35" />
+        <line x1="20" y1="80" x2="23" y2="77" stroke="#f5f5f7" strokeWidth="1" strokeOpacity="0.35" />
+        <line x1="80" y1="80" x2="77" y2="77" stroke="#f5f5f7" strokeWidth="1" strokeOpacity="0.35" />
+
+        {/* Inner Obsidian Monolith Chamber */}
+        <circle cx="50" cy="50" r="37" fill="#050507" stroke="#f5f5f7" strokeWidth="1" strokeOpacity="0.2" />
+
+        {/* Geometric Watcher Eye Aperture (Precision Hairline Arcs) */}
         <path
-          d="M 24 18 
-             L 24 58 
-             C 24 74 36 86 50 86 
-             C 64 86 76 74 76 58 
-             L 76 18 
-             L 66 18 
-             L 66 58 
-             C 66 68 59 75 50 75 
-             C 41 75 34 68 34 58 
-             L 34 18 
-             Z"
-          fill="#03070b"
-          stroke="#00ff9d"
-          strokeWidth="2.2"
-          strokeLinejoin="round"
-          filter={glow ? "url(#monolith-neon-emerald)" : undefined}
-        />
-
-        {/* Celestial Astrolabe Equator Line */}
-        <line
-          x1="12"
-          y1="50"
-          x2="88"
-          y2="50"
-          stroke="#00ff9d"
-          strokeWidth="1.2"
-          strokeDasharray="2 3"
-          strokeOpacity="0.5"
-        />
-
-        {/* Celestial Watcher Iris Outer Orbit Ring */}
-        <circle
-          cx="50"
-          cy="48"
-          r="16"
-          fill="none"
-          stroke="#00ff9d"
-          strokeWidth="1.6"
-          strokeDasharray="22 4"
-        />
-
-        {/* Celestial Watcher Iris Inner Orbit Ring */}
-        <circle
-          cx="50"
-          cy="48"
-          r="10"
-          fill="#050a0e"
-          stroke="#ffffff"
-          strokeWidth="1.2"
-          strokeOpacity="0.85"
-        />
-
-        {/* All-Seeing Radiant Crimson Starlight Pupil */}
-        <circle
-          cx="50"
-          cy="48"
-          r="4.5"
-          fill="#ff0055"
-          filter={glow ? "url(#monolith-neon-crimson)" : undefined}
-        />
-        <circle cx="50" cy="48" r="1.5" fill="#ffffff" />
-
-        {/* Northern Celestial Meridian Tick */}
-        <line
-          x1="50"
-          y1="10"
-          x2="50"
-          y2="18"
-          stroke="#00ff9d"
+          d="M 17 50 Q 50 18 83 50 Q 50 82 17 50 Z"
+          fill="#0a0a0e"
+          stroke="#f5f5f7"
           strokeWidth="1.8"
-          strokeLinecap="round"
+          strokeLinejoin="round"
         />
-        <circle cx="50" cy="9" r="1.5" fill="#ff0055" />
+
+        {/* Inner Secondary Eyelid Contour */}
+        <path
+          d="M 24 50 Q 50 26 76 50 Q 50 74 24 50 Z"
+          fill="none"
+          stroke="#ff3b00"
+          strokeWidth="1"
+          strokeOpacity="0.4"
+        />
+
+        {/* Iris Outer Concentric Gear / Segment Ring */}
+        <circle
+          cx="50"
+          cy="50"
+          r="17"
+          fill="#000000"
+          stroke="#f5f5f7"
+          strokeWidth="1.4"
+          strokeDasharray="8 3"
+        />
+
+        {/* Iris Inner Target Reticle Ring */}
+        <circle
+          cx="50"
+          cy="50"
+          r="11"
+          fill="#09090d"
+          stroke="#ff3b00"
+          strokeWidth="1.2"
+          strokeOpacity="0.75"
+        />
+
+        {/* Reticle Fine Crosshairs */}
+        <line x1="36" y1="50" x2="44" y2="50" stroke="#ff3b00" strokeWidth="1" strokeOpacity="0.8" />
+        <line x1="56" y1="50" x2="64" y2="50" stroke="#ff3b00" strokeWidth="1" strokeOpacity="0.8" />
+        <line x1="50" y1="36" x2="50" y2="44" stroke="#ff3b00" strokeWidth="1" strokeOpacity="0.8" />
+        <line x1="50" y1="56" x2="50" y2="64" stroke="#ff3b00" strokeWidth="1" strokeOpacity="0.8" />
+
+        {/* Surgical Ember Vermilion Focal Pupil */}
+        <circle
+          cx="50"
+          cy="50"
+          r="5.5"
+          fill="#ff3b00"
+          filter={glow ? "url(#ocular-filter)" : undefined}
+        />
+
+        {/* Starlight White Focal Center Point */}
+        <circle cx="50" cy="50" r="1.8" fill="#ffffff" />
       </svg>
     </div>
   );

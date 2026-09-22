@@ -88,13 +88,26 @@ export function DocsPage({ onBack }: { onBack: () => void }) {
   }, [activeDoc]);
 
   return (
-    <div className="docs-page">
+    <div className="docs-page utopia-cross-grid">
+      <div className="utopia-telemetry-header">
+        <div className="utopia-telemetry-coords">
+          [ 35.6762° N // 139.6503° E ]
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+          <span>MANUAL: USER_DOCUMENTATION</span>
+          <span className="utopia-telemetry-coords">
+            INDEX: {activeDoc.toUpperCase()}
+          </span>
+          <span>VERSION: 2.4.0-RC.1</span>
+        </div>
+      </div>
+
       <header className="docs-topbar">
         <BrandLockup size="md" onClick={onBack} />
         <div className="docs-topbar-actions" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <ThemeToggle />
-          <button type="button" className="btn btn-ghost" onClick={onBack}>
-            ← Back to App
+          <button type="button" className="btn-utopia btn-utopia-ghost btn-sm" onClick={onBack}>
+            ← RETURN_TO_APP
           </button>
         </div>
       </header>

@@ -110,9 +110,9 @@ export function Onboarding({
   }
 
   return (
-    <div className="onboard">
+    <div className="onboard utopia-cross-grid">
       <header className="topbar">
-        <BrandLockup size="md" subtitle={`Setup · ${user.login}`} href="/" />
+        <BrandLockup size="md" subtitle={`[ SETUP // ${user.login} ]`} href="/" />
         <div className="topbar-actions">
           <button className="btn btn-ghost" type="button" onClick={onSkipToDashboard}>
             Skip to console

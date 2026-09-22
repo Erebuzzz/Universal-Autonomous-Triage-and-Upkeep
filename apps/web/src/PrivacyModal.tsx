@@ -10,13 +10,12 @@ export function PrivacyModal({ isOpen = true, onClose, asFullPage = false }: Pro
   if (!isOpen && !asFullPage) return null;
 
   const content = (
-    <div className={asFullPage ? "void-card" : "modal-card"}>
+    <div className={asFullPage ? "void-card utopia-hud-frame" : "modal-card utopia-hud-frame"}>
       <header className={asFullPage ? "" : "modal-header"} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
           <BrandLockup size="sm" showTag={false} />
-          <span className="hero-beacon" style={{ margin: 0, padding: "0.2rem 0.5rem" }}>
-            <span className="beacon-dot" />
-            Security Protocol
+          <span className="utopia-hash-badge">
+            SECURITY PROTOCOL // ZERO_TRUST
           </span>
           <h3 style={{ margin: 0, fontSize: "1.2rem", color: "var(--paper)" }}>
             Privacy Policy &amp; Code Safety
@@ -91,8 +90,8 @@ export function PrivacyModal({ isOpen = true, onClose, asFullPage = false }: Pro
       </div>
 
       <footer className={asFullPage ? "void-actions" : "modal-footer"} style={{ marginTop: asFullPage ? "1.5rem" : 0 }}>
-        <button type="button" className="btn btn-primary" onClick={onClose}>
-          {asFullPage ? "← Return to App" : "Understood"}
+        <button type="button" className="btn-utopia" onClick={onClose}>
+          {asFullPage ? "← RETURN_TO_APP" : "UNDERSTOOD"}
         </button>
       </footer>
     </div>

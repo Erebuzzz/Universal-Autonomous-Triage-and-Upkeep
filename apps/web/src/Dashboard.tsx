@@ -157,7 +157,20 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell utopia-cross-grid">
+      <div className="utopia-telemetry-header">
+        <div className="utopia-telemetry-coords">
+          [ 35.6762° N // 139.6503° E ]
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
+          <span>TARGET: {grant?.repositoryFullName ?? "SAMPLE_FIXTURE"}</span>
+          <span className="utopia-telemetry-coords">
+            {grant ? "AUTHORIZED" : "PASSIVE_MONITORING"}
+          </span>
+          <span>VERSION: 2.4.0-RC.1</span>
+        </div>
+      </div>
+
       <header className="topbar">
         <BrandLockup size="md" variant="tagline" href="/" />
         <div className="topbar-actions">
@@ -373,13 +386,13 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
 
           <section>
             <div className="section-head">
-              <h2>Neural repository map</h2>
-              <span className="brand-tag">{brain?.nodes?.length ?? 0} neurons · interactive</span>
+              <h2>Topographic Repository Map</h2>
+              <span className="utopia-hash-badge">{brain?.nodes?.length ?? 0} SURVEY WAYPOINTS · 2.5D CARTOGRAPHY</span>
             </div>
             {brain?.nodes?.length ? (
-              <BrainMapView brain={brain} />
+              <BrainMapView brain={brain} height={500} />
             ) : (
-              <div className="empty">Brain map activates after triage begins.</div>
+              <div className="empty">Topographic cartography initializes after triage begins.</div>
             )}
           </section>
 
