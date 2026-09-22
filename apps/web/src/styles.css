@@ -45,14 +45,15 @@
   --font-mono: "JetBrains Mono", "Consolas", monospace;
   --font-display: "Cinzel", "Cormorant Garamond", "Italiana", serif;
 
-  /* Mathematical Fluid Typography Scale via CSS clamp (Strict 7-tier scale) */
-  --text-xs: clamp(0.75rem, 0.72rem + 0.1vw, 0.8rem);
-  --text-sm: clamp(0.85rem, 0.82rem + 0.15vw, 0.9rem);
-  --text-base: clamp(0.95rem, 0.92rem + 0.2vw, 1.05rem);
-  --text-lg: clamp(1.12rem, 1.05rem + 0.35vw, 1.25rem);
-  --text-xl: clamp(1.35rem, 1.25rem + 0.5vw, 1.55rem);
-  --text-2xl: clamp(1.75rem, 1.50rem + 1vw, 2.25rem);
-  --text-3xl: clamp(2.50rem, 2.00rem + 2.2vw, 3.75rem);
+  /* Mathematical Fluid Typography Scale via CSS clamp (Strict 8-tier scale) */
+  --text-2xs: clamp(0.8rem, 0.78rem + 0.1vw, 0.82rem); /* >= 12.8px */
+  --text-xs: clamp(0.85rem, 0.82rem + 0.1vw, 0.88rem); /* >= 13.6px */
+  --text-sm: clamp(0.92rem, 0.88rem + 0.15vw, 0.98rem);
+  --text-base: clamp(1rem, 0.95rem + 0.2vw, 1.1rem);
+  --text-md: clamp(1.15rem, 1.08rem + 0.35vw, 1.3rem);
+  --text-lg: clamp(1.35rem, 1.25rem + 0.5vw, 1.55rem);
+  --text-xl: clamp(1.8rem, 1.55rem + 1vw, 2.35rem);
+  --text-display: clamp(2.4rem, 1.8rem + 4.5vw, 6.2rem);
 
   /* Consolidated Corner Radii (4 shared tokens) */
   --radius-sm: 6px;
@@ -1264,16 +1265,15 @@ a {
 /* Header GPS Telemetry Strip */
 .utopia-telemetry-header {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
+  font-size: var(--text-2xs); /* >= 12.8px for strict legibility */
+  letter-spacing: 0.12em;
   color: var(--paper-dim);
-  text-transform: uppercase;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 1.25rem;
+  padding: 0.65rem 1.25rem;
   border-bottom: 1px solid var(--ink-line);
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(12px);
 }
 
@@ -1349,9 +1349,9 @@ a {
 /* Precision Corner-Bracketed Button: [ >_EXECUTE_ACTION ] */
 .btn-utopia {
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--paper);
   background: #000000;
@@ -1404,6 +1404,46 @@ a {
   border-color: #000000;
 }
 
+/* Primary Action CTA (Solid Vermilion Fill for Unmistakable Hierarchy) */
+.btn-utopia-primary {
+  background: var(--signal-ember);
+  color: #000000;
+  border-color: var(--signal-ember);
+  font-weight: 800;
+  box-shadow: 0 4px 20px var(--signal-glow);
+}
+
+.btn-utopia-primary::before,
+.btn-utopia-primary::after {
+  border-color: #000000;
+}
+
+.btn-utopia-primary:hover {
+  background: #ff5522;
+  color: #000000;
+  border-color: #ff5522;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(255, 59, 0, 0.6);
+}
+
+.btn-utopia-primary:hover::before,
+.btn-utopia-primary:hover::after {
+  border-color: #000000;
+}
+
+/* Secondary Action Button */
+.btn-utopia-secondary {
+  background: #09090d;
+  color: var(--paper);
+  border-color: var(--ink-line-bright);
+}
+
+.btn-utopia-secondary:hover {
+  background: #14141c;
+  color: var(--paper);
+  border-color: var(--signal-ember);
+}
+
 .btn-utopia-ghost {
   background: transparent;
   color: var(--paper-dim);
@@ -1417,15 +1457,15 @@ a {
   box-shadow: none;
 }
 
-/* Measurement Hash Scale: | | | | | | | [ III ] | | | | | | | */
+/* Measurement Hash Scale: | | | | | | | [ 03 ] | | | | | | | */
 .utopia-hash-scale {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--paper-muted);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.1em;
+  color: var(--paper-dim);
 }
 
 .utopia-hash-tick {
@@ -1479,18 +1519,63 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 1rem;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
+  padding: 0.65rem 1rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
   pointer-events: none;
   z-index: 5;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+  font-size: var(--text-2xs);
+  letter-spacing: 0.1em;
   color: var(--paper-dim);
 }
 
 .topo-hud-telemetry > * {
   pointer-events: auto;
+}
+
+/* Filter Tier Controls in Map Telemetry Bar */
+.topo-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.topo-filter-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--paper-dim);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.topo-filter-chip {
+  min-height: 32px;
+  padding: 0.25rem 0.65rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--ink-line);
+  color: var(--paper-dim);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topo-filter-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--paper);
+  border-color: var(--ink-line-bright);
+}
+
+.topo-filter-chip.active {
+  background: var(--signal-ember);
+  color: #000000;
+  border-color: var(--signal-ember);
+  box-shadow: 0 0 12px rgba(255, 59, 0, 0.35);
 }
 
 /* Drone GPS Reticle & Crosshair */
@@ -1537,19 +1622,17 @@ a {
   right: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
   z-index: 6;
 }
 
 .topo-flight-btn {
-  width: 36px;
-  height: 36px;
-  background: rgba(10, 10, 14, 0.9);
-  border: 1px solid var(--ink-line);
+  width: 44px;
+  height: 44px;
+  background: rgba(10, 10, 14, 0.92);
+  border: 1px solid var(--ink-line-bright);
+  border-radius: var(--radius-sm);
   color: var(--paper);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1561,6 +1644,7 @@ a {
   background: var(--signal-ember);
   color: #000000;
   border-color: var(--signal-ember);
+  box-shadow: 0 0 16px rgba(255, 59, 0, 0.45);
 }
 
 /* Compass Rose in Top Right */
@@ -1568,16 +1652,16 @@ a {
   position: absolute;
   top: 3.25rem;
   right: 1.25rem;
-  width: 42px;
-  height: 42px;
-  border: 1px solid var(--ink-line);
-  background: rgba(0, 0, 0, 0.7);
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ink-line-bright);
+  background: rgba(0, 0, 0, 0.75);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: var(--signal-ember);
   z-index: 5;
@@ -1589,29 +1673,32 @@ a {
   bottom: 1.25rem;
   left: 1.25rem;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  color: var(--paper-dim);
+  font-size: var(--text-xs); /* >= 13px */
+  letter-spacing: 0.1em;
+  color: var(--paper);
   z-index: 5;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 0.3rem 0.6rem;
-  border: 1px solid var(--ink-line);
+  background: rgba(0, 0, 0, 0.82);
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--ink-line-bright);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(8px);
 }
 
 /* Cartographic Waypoint Survey Drawer */
 .topo-survey-drawer {
   position: absolute;
-  top: 3rem;
+  top: 3.25rem;
   left: 1.25rem;
   width: 320px;
   max-width: calc(100% - 2.5rem);
-  background: rgba(8, 8, 11, 0.95);
+  background: rgba(8, 8, 11, 0.96);
   border: 1px solid var(--ink-line-bright);
   padding: 1rem;
   z-index: 7;
   font-family: var(--font-mono);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(16px);
+  border-radius: var(--radius-sm);
 }
 
 .topo-survey-header {
@@ -1624,20 +1711,21 @@ a {
 }
 
 .topo-survey-title {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   color: var(--paper);
   text-transform: uppercase;
 }
 
 .topo-survey-tier {
-  font-size: 0.65rem;
-  padding: 0.15rem 0.4rem;
+  font-size: var(--text-2xs);
+  padding: 0.18rem 0.45rem;
   background: rgba(255, 59, 0, 0.15);
   border: 1px solid var(--signal-ember);
   color: var(--signal-ember);
   font-weight: 700;
+  border-radius: 4px;
 }
 
 .landing-nav,
@@ -1690,89 +1778,322 @@ a {
   text-align: right;
 }
 
-.landing-hero {
+/* Symmetrical Hero Command Cockpit */
+.landing-hero-cockpit {
+  position: relative;
+  z-index: 1;
+  padding: 2rem 1.5rem 1rem;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.landing-hero-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: var(--space-6);
-  padding: var(--space-6) var(--space-6) var(--space-7);
-  max-width: 82rem;
-  margin: 0 auto;
-  min-height: min(76vh, 680px);
+  gap: 2rem;
+  align-items: stretch;
 }
 
-.landing-hero-content {
+@media (max-width: 900px) {
+  .landing-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.landing-hero-left,
+.landing-hero-right {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 2rem;
+  background: #060608;
+  border: 1px solid var(--ink-line-bright);
+  box-sizing: border-box;
 }
 
-.hero-beacon {
+.hero-subhead-pill {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.16em;
+  color: var(--signal-ember);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.hero-punch-summary {
+  font-family: var(--font-sans);
+  color: var(--paper-dim);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin: 1.25rem 0 1.5rem 0;
+}
+
+.hero-action-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 1.25rem;
+}
+
+.hero-health-status {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--signal-ember);
+  margin-top: 1rem;
+}
+
+.hud-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--ink-line);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.hud-panel-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--signal-ember);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.hud-panel-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--paper-dim);
+}
+
+.hud-briefing-text {
+  font-family: var(--font-sans);
+  color: var(--paper-dim);
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  margin: 0 0 1.5rem 0;
+}
+
+.telemetry-stream-box {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--ink-line);
+  padding: 1rem;
+  margin-top: auto;
+  border-radius: var(--radius-sm);
+}
+
+.telemetry-stream-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.telemetry-stream-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--paper);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.telemetry-stream-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.telemetry-toggle-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  background: rgba(16, 185, 129, 0.08);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--signal-soft);
-  width: fit-content;
-  margin-bottom: var(--space-4);
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
-}
-
-.beacon-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--signal);
-  box-shadow: 0 0 8px var(--signal);
-  animation: pulse-beacon 2s ease-in-out infinite;
-}
-
-@keyframes pulse-beacon {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.8); }
-}
-
-.landing-brand {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(3.2rem, 7vw, 5.2rem);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  line-height: 1.02;
+  gap: 0.45rem;
+  background: rgba(255, 59, 0, 0.12);
+  border: 1px solid var(--signal-ember);
   color: var(--paper);
-  animation: brand-reveal var(--dur-slow) var(--ease) both;
-}
-
-.landing-tagline {
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
-  font-weight: 500;
-  color: var(--signal);
-  margin: var(--space-2) 0 var(--space-3);
-  text-transform: none;
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.22rem 0.65rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
 }
 
-.landing-lede {
-  margin: var(--space-3) 0 var(--space-5);
-  max-width: 36rem;
-  font-size: clamp(1.05rem, 1.8vw, 1.15rem);
-  line-height: 1.6;
-  color: var(--text-dim);
+.telemetry-toggle-pill:hover {
+  background: var(--signal-ember);
+  color: #000000;
 }
 
-.landing-cta {
+.toggle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-ember);
+}
+
+.toggle-dot.active {
+  animation: pulse-beacon 1.5s ease-in-out infinite;
+}
+
+.toggle-dot.paused {
+  background: var(--paper-dim);
+}
+
+.telemetry-steps-list {
   display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.telemetry-step-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--paper-muted);
+  padding: 0.35rem 0.55rem;
+  border-left: 2px solid transparent;
+  transition: all var(--dur) var(--ease);
+}
+
+.telemetry-step-row.active {
+  color: var(--paper);
+  background: rgba(255, 59, 0, 0.12);
+  border-left-color: var(--signal-ember);
+}
+
+.step-idx {
+  color: var(--signal-ember);
+  font-weight: 700;
+}
+
+.step-name {
+  font-weight: 700;
+}
+
+.step-model {
+  margin-left: auto;
+  color: var(--paper-dim);
+  font-size: var(--text-2xs);
+}
+
+/* Symmetrical Cartographic Map Section */
+.landing-map-section {
+  max-width: 1240px;
+  margin: 2.5rem auto 0;
+  padding: 0 1.5rem;
+}
+
+.landing-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
+  gap: 1rem;
+}
+
+.map-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.map-heading {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  margin: 0;
+  letter-spacing: 0.08em;
+  color: var(--paper);
+  font-weight: 800;
+}
+
+.landing-map-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--paper-dim);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.map-stats-active {
+  color: var(--signal-ember);
+  font-weight: 700;
+}
+
+/* Flip Card & Spec Grid Styles */
+.feature-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.feature-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.feature-card-title {
+  font-family: var(--font-mono);
+  color: var(--paper);
+  font-size: var(--text-md);
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.feature-card-desc {
+  color: var(--paper-dim);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.feature-card-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+}
+
+.card-flip-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--paper-dim);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ink-line);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--dur) var(--ease);
+}
+
+.feature-card:hover .card-flip-indicator {
+  color: var(--signal-ember);
+  border-color: rgba(255, 59, 0, 0.4);
+  background: rgba(255, 59, 0, 0.1);
 }
 
 /* -- Interactive Telemetry Terminal (Hero Right) -- */

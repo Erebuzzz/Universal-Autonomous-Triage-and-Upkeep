@@ -313,41 +313,32 @@ export function BrainMapView({
       <div className="topo-hud-telemetry">
         <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", flexWrap: "wrap" }}>
           <span style={{ color: "var(--signal-ember)", fontWeight: 700 }}>
-            ● [ LAT: 35.6762°N // LON: 139.6503°E ]
+            ● [ Lat: 35.6762°N // Lon: 139.6503°E ]
           </span>
           <span style={{ color: "var(--paper-dim)" }}>
-            ELEV:{" "}
+            Elev:{" "}
             <strong style={{ color: "var(--paper)" }}>
               {selectedCoord ? `+${selectedCoord.elevation}m` : "+1,840m (AVG)"}
             </strong>
           </span>
           <span style={{ color: "var(--paper-muted)" }}>
-            SECTOR: <strong>TOKYO-ALPHA-01</strong>
+            Sector: <strong>TOKYO-ALPHA-01</strong>
           </span>
         </div>
 
         {/* Filter Tier Chips */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+        <div className="topo-filter-group">
+          <span className="topo-filter-label">Filter:</span>
           {(["ALL", "SUMMIT", "RIDGE", "PLATEAU", "VALLEY"] as const).map((tier) => (
             <button
               key={tier}
               type="button"
-              className="btn btn-sm"
+              className={`topo-filter-chip ${filterTier === tier ? "active" : ""}`}
               onClick={() => {
                 sound.playTactileClick();
                 setFilterTier(tier);
               }}
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.62rem",
-                padding: "0.15rem 0.45rem",
-                background: filterTier === tier ? "var(--signal-ember)" : "rgba(255, 255, 255, 0.06)",
-                color: filterTier === tier ? "#000000" : "var(--paper-dim)",
-                border: "1px solid",
-                borderColor: filterTier === tier ? "var(--signal-ember)" : "var(--ink-line)",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
+              aria-pressed={filterTier === tier}
             >
               {tier}
             </button>
@@ -362,14 +353,40 @@ export function BrainMapView({
 
       {/* Flight Controls */}
       <div className="topo-flight-controls">
-        <button type="button" className="topo-flight-btn" onClick={zoomIn} title="Zoom In Altitude" aria-label="Zoom In">
-          +
+        <button
+          type="button"
+          className="topo-flight-btn"
+          onClick={zoomIn}
+          title="Zoom In Altitude"
+          aria-label="Zoom In"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
         </button>
-        <button type="button" className="topo-flight-btn" onClick={zoomOut} title="Zoom Out Altitude" aria-label="Zoom Out">
-          -
+        <button
+          type="button"
+          className="topo-flight-btn"
+          onClick={zoomOut}
+          title="Zoom Out Altitude"
+          aria-label="Zoom Out"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
         </button>
-        <button type="button" className="topo-flight-btn" onClick={resetView} title="Reset Flight View" aria-label="Reset View">
-          ⟲
+        <button
+          type="button"
+          className="topo-flight-btn"
+          onClick={resetView}
+          title="Reset Flight View"
+          aria-label="Reset View"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
         </button>
         <button
           type="button"
@@ -379,13 +396,22 @@ export function BrainMapView({
           aria-label="Focus Summit"
           style={{ color: "var(--signal-ember)" }}
         >
-          🎯
+          {/* Custom Precision Translucent SVG Reticle */}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ opacity: 0.9 }}>
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.45" />
+            <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.6" />
+            <line x1="12" y1="1" x2="12" y2="6" stroke="currentColor" strokeWidth="1.4" />
+            <line x1="12" y1="18" x2="12" y2="23" stroke="currentColor" strokeWidth="1.4" />
+            <line x1="1" y1="12" x2="6" y2="12" stroke="currentColor" strokeWidth="1.4" />
+            <line x1="18" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.4" />
+            <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+          </svg>
         </button>
       </div>
 
       {/* Cartographic Scale Bar */}
       <div className="topo-scale-bar">
-        <span>|━━━━ 500 LOC ━━━━| SCALE: 1:25000</span>
+        <span>|━━━━ 500 LOC ━━━━| Scale: 1:25000</span>
       </div>
 
       {/* SVG Topographic Navigation Canvas */}
@@ -605,19 +631,19 @@ export function BrainMapView({
             </span>
           </div>
 
-          <div style={{ fontSize: "0.72rem", color: "var(--paper-dim)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
+          <div style={{ fontSize: "var(--text-2xs)", color: "var(--paper-dim)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
             <div>
-              COORDINATES: <span style={{ color: "var(--paper)" }}>X: {selectedCoord.x} · Y: {selectedCoord.y}</span>
+              Coordinates: <span style={{ color: "var(--paper)" }}>X: {selectedCoord.x} · Y: {selectedCoord.y}</span>
             </div>
             <div>
-              CLASSIFICATION: <span style={{ color: "var(--signal-ember)", fontWeight: 700 }}>{selectedCoord.node.kind}</span>
+              Classification: <span style={{ color: "var(--signal-ember)", fontWeight: 700 }}>{selectedCoord.node.kind}</span>
             </div>
             <div>
-              CONFIDENCE:{" "}
+              Confidence:{" "}
               <span style={{ color: "var(--paper)" }}>{Math.round((selectedCoord.node.confidence ?? 1) * 100)}%</span>
             </div>
             <div>
-              STATUS: <span style={{ color: "var(--pass)" }}>{selectedCoord.node.status ?? "ACTIVE"}</span>
+              Status: <span style={{ color: "var(--pass)" }}>{selectedCoord.node.status ?? "Active"}</span>
             </div>
           </div>
 

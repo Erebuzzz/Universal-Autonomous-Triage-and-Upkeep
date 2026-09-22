@@ -67,11 +67,11 @@ export function Landing({
           [ 35.6762° N // 139.6503° E ]
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
-          <span>SECTOR: GLOBAL_OBSERVATION</span>
+          <span>Sector: Global Observation</span>
           <span className="utopia-telemetry-coords">
-            STATUS: SURVEILLANCE_ACTIVE
+            Status: Active Surveillance
           </span>
-          <span>VERSION: 2.4.0-RC.1</span>
+          <span>Version: 2.4.0-RC.1</span>
         </div>
       </div>
 
@@ -81,10 +81,10 @@ export function Landing({
 
         <nav style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginLeft: "auto", flexWrap: "wrap" }}>
           <a href="#how-it-works" className="landing-nav-link">
-            [ 01 // LIFECYCLE ]
+            [ 01 // Lifecycle ]
           </a>
           <a href="#cartography" className="landing-nav-link">
-            [ 02 // CARTOGRAPHY ]
+            [ 02 // Cartography ]
           </a>
           <a
             href="/docs"
@@ -94,245 +94,258 @@ export function Landing({
               navigate("/docs");
             }}
           >
-            [ 03 // DOCS ]
+            [ 03 // Docs ]
           </a>
           <button
             type="button"
             className="landing-nav-link landing-nav-btn"
             onClick={() => setShowPrivacy(true)}
           >
-            [ 04 // PRIVACY ]
+            [ 04 // Privacy ]
           </button>
           <AudioToggle />
           <ThemeToggle />
         </nav>
       </header>
 
-      {/* Hero Chamber */}
-      <main className="landing-hero" style={{ padding: "2rem 1.5rem 4rem" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: "2.5rem" }}>
+      {/* Symmetrical Hero Command Cockpit */}
+      <main className="landing-hero-cockpit">
+        <div className="landing-hero-grid">
           
-          {/* Top Row: Monumental Typography & Narrative Briefing */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem", alignItems: "center" }}>
-            
-            {/* Left Column: Monumental Stencil & Punch Triplet */}
-            <div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.2em", color: "var(--signal-ember)", marginBottom: "0.75rem" }}>
-                [ COSMIC AUTONOMOUS UPKEEP RUNTIME ]
-              </div>
+          {/* Left Column: Monumental Stencil, Brutalist Punch Triplet, and Action CTAs */}
+          <div className="landing-hero-left utopia-hud-frame">
+            <div className="hero-subhead-pill">
+              [ Cosmic Autonomous Upkeep Runtime ]
+            </div>
 
-              <h1 className="utopia-monumental-title">
-                <span className="utopia-title-solid">UATU</span>
-                <span className="utopia-title-outline">WATCHER</span>
-              </h1>
+            <h1 className="utopia-monumental-title">
+              <span className="utopia-title-solid">UATU</span>
+              <span className="utopia-title-outline">WATCHER</span>
+            </h1>
 
-              {/* Brutalist Punch Triplet with Square Red Dots */}
-              <div className="utopia-punch-triplet" style={{ margin: "1.25rem 0" }}>
-                <span className="utopia-punch-line">
-                  OBSERVED<span className="utopia-punch-dot">.</span>
-                </span>
-                <span className="utopia-punch-line">
-                  TRIAGED<span className="utopia-punch-dot">.</span>
-                </span>
-                <span className="utopia-punch-line">
-                  REPAIRED<span className="utopia-punch-dot">.</span>
-                </span>
-              </div>
+            {/* Brutalist Punch Triplet with Square Ember Dots */}
+            <div className="utopia-punch-triplet">
+              <span className="utopia-punch-line">
+                OBSERVED<span className="utopia-punch-dot">.</span>
+              </span>
+              <span className="utopia-punch-line">
+                TRIAGED<span className="utopia-punch-dot">.</span>
+              </span>
+              <span className="utopia-punch-line">
+                REPAIRED<span className="utopia-punch-dot">.</span>
+              </span>
+            </div>
 
-              {/* Corner-Bracketed Action Controls */}
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", marginTop: "1.75rem" }}>
-                {canOAuth ? (
-                  <a
-                    href={api.githubLoginUrl()}
-                    onClick={() => sound.playCelestialChime()}
-                    className="btn-utopia"
-                  >
-                    &gt;_EXECUTE_TRIAGE
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.playCelestialChime();
-                      onMockSignIn();
-                    }}
-                    className="btn-utopia"
-                    disabled={busy}
-                  >
-                    &gt;_{flags.mockAuth ? "MOCK_SESSION" : "EXECUTE_DEMO"}
-                  </button>
-                )}
+            <p className="hero-punch-summary">
+              A silent autonomous watcher continuously observing code multiverse entropy.
+              Isolating vulnerability summits and synthesizing verified, zero-regression pull requests.
+            </p>
 
+            {/* Primary & Secondary Action CTAs */}
+            <div className="hero-action-group">
+              {canOAuth ? (
+                <a
+                  href={api.githubLoginUrl()}
+                  onClick={() => sound.playCelestialChime()}
+                  className="btn-utopia btn-utopia-primary"
+                >
+                  &gt;_EXECUTE_TRIAGE
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playCelestialChime();
+                    onMockSignIn();
+                  }}
+                  className="btn-utopia btn-utopia-primary"
+                  disabled={busy}
+                >
+                  &gt;_{flags.mockAuth ? "MOCK_SESSION" : "EXECUTE_DEMO"}
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn-utopia btn-utopia-ghost"
+                onClick={onLocalDemo}
+                disabled={busy}
+              >
+                &gt;_LOCAL_FIXTURE
+              </button>
+
+              {showMock && canOAuth && (
                 <button
                   type="button"
                   className="btn-utopia btn-utopia-ghost"
-                  onClick={onLocalDemo}
+                  onClick={onMockSignIn}
                   disabled={busy}
                 >
-                  &gt;_LOCAL_FIXTURE
+                  &gt;_MOCK_SESSION
                 </button>
-
-                {showMock && canOAuth && (
-                  <button
-                    type="button"
-                    className="btn-utopia btn-utopia-ghost"
-                    onClick={onMockSignIn}
-                    disabled={busy}
-                  >
-                    &gt;_MOCK_SESSION
-                  </button>
-                )}
-              </div>
-
-              {healthError && (
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--signal-ember)", marginTop: "1rem" }} role="status">
-                  [!] API STATUS: {healthError} · LOCAL FIXTURE FULLY OPERATIONAL
-                </p>
               )}
             </div>
 
-            {/* Right Column: Mission Briefing & Real-time Ingestion Pipeline */}
-            <div className="utopia-hud-frame" style={{ padding: "1.5rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--ink-line)", paddingBottom: "0.6rem", marginBottom: "1rem" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--signal-ember)", fontWeight: 700, letterSpacing: "0.14em" }}>
-                  [ MISSION BRIEFING // THESIS ]
-                </span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--paper-dim)" }}>
-                  LATENCY: &lt;42ms
-                </span>
-              </div>
-
-              <p style={{ fontFamily: "var(--font-sans)", color: "var(--paper-dim)", fontSize: "0.95rem", lineHeight: 1.65, margin: "0 0 1.25rem 0" }}>
-                A silent watcher observing the multiverse of code. UATU continuously maps repository entropy,
-                projects architectural files onto an interactive 2.5D topographic elevation grid, targets high-risk
-                summit bugs and CVE advisories, and synthesizes minimal, verified pull requests without human prompting.
+            {healthError && (
+              <p className="hero-health-status" role="status">
+                [!] API Status: {healthError} · Local fixture operational
               </p>
+            )}
+          </div>
 
-              {/* Mini Simulation Pipeline */}
-              <div style={{ background: "rgba(0, 0, 0, 0.7)", border: "1px solid var(--ink-line)", padding: "0.75rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--paper)", fontWeight: 700 }}>
-                    ACTIVE TELEMETRY STREAM
-                  </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <LatticeLoader status={isPaused ? "done" : "working"} pattern="orbit" grid={3} color="#ff3b00" />
-                    <button
-                      type="button"
-                      onClick={() => setIsPaused((p) => !p)}
-                      style={{ background: "none", border: "none", color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontSize: "0.65rem", cursor: "pointer" }}
-                    >
-                      [{isPaused ? "RESUME" : "PAUSE"}]
-                    </button>
+          {/* Right Column: Mission Briefing & Real-time Telemetry Stream */}
+          <div className="landing-hero-right utopia-hud-frame">
+            <div className="hud-panel-header">
+              <span className="hud-panel-title">
+                [ Mission Briefing // Thesis ]
+              </span>
+              <span className="hud-panel-meta">
+                Latency: &lt;42ms
+              </span>
+            </div>
+
+            <p className="hud-briefing-text">
+              A silent watcher observing the multiverse of code. UATU continuously maps repository entropy,
+              projects architectural files onto an interactive 2.5D topographic elevation grid, targets high-risk
+              summit bugs and CVE advisories, and synthesizes minimal, verified pull requests without human prompting.
+            </p>
+
+            {/* Interactive Telemetry Stream */}
+            <div className="telemetry-stream-box">
+              <div className="telemetry-stream-bar">
+                <span className="telemetry-stream-title">
+                  Active Telemetry Stream
+                </span>
+                <div className="telemetry-stream-controls">
+                  <LatticeLoader status={isPaused ? "done" : "working"} pattern="orbit" grid={3} color="#ff3b00" />
+                  <button
+                    type="button"
+                    className="telemetry-toggle-pill"
+                    onClick={() => setIsPaused((p) => !p)}
+                    aria-pressed={isPaused}
+                    title={isPaused ? "Resume telemetry animation" : "Pause telemetry animation"}
+                  >
+                    <span className={`toggle-dot ${isPaused ? "paused" : "active"}`} />
+                    <span>{isPaused ? "Resume" : "Pause"}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="telemetry-steps-list">
+                {TELEMETRY_STEPS.map((step, i) => (
+                  <div
+                    key={step.idx}
+                    className={`telemetry-step-row ${i === activeStep ? "active" : ""}`}
+                  >
+                    <span className="step-idx">{step.idx}</span>
+                    <span className="step-name">{step.name}</span>
+                    <span className="step-model">{step.model}</span>
                   </div>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  {TELEMETRY_STEPS.map((step, i) => (
-                    <div
-                      key={step.idx}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.6rem",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "0.68rem",
-                        color: i === activeStep ? "var(--paper)" : "var(--paper-muted)",
-                        background: i === activeStep ? "rgba(255, 59, 0, 0.12)" : "transparent",
-                        padding: "0.25rem 0.4rem",
-                        borderLeft: i === activeStep ? "2px solid var(--signal-ember)" : "2px solid transparent",
-                      }}
-                    >
-                      <span style={{ color: "var(--signal-ember)", fontWeight: 700 }}>{step.idx}</span>
-                      <span style={{ fontWeight: 700 }}>{step.name}</span>
-                      <span style={{ marginLeft: "auto", color: "var(--paper-dim)" }}>{step.model}</span>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           </div>
-
-          {/* Centerpiece: Interactive Topographic Elevation Grid Navigation Map */}
-          <div id="cartography">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span className="utopia-hash-badge">[ II // SPATIAL CARTOGRAPHY ]</span>
-                <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "1.1rem", margin: 0, letterSpacing: "0.08em", color: "var(--paper)" }}>
-                  TOPOGRAPHIC REPOSITORY ELEVATION MAP
-                </h2>
-              </div>
-              <div className="utopia-hash-scale">
-                <span className="utopia-hash-tick active" />
-                <span className="utopia-hash-tick" />
-                <span className="utopia-hash-tick" />
-                <span className="utopia-hash-badge">SECTOR: 01-ALPHA</span>
-                <span className="utopia-hash-tick" />
-                <span className="utopia-hash-tick" />
-                <span className="utopia-hash-tick active" />
-              </div>
-            </div>
-
-            {/* Embedded Live Topographic Navigation Map */}
-            <BrainMapView brain={demoBrain} height={540} />
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.6rem", fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--paper-dim)", flexWrap: "wrap", gap: "0.5rem" }}>
-              <span>
-                TIP: DRAG TO PAN · MOUSE WHEEL TO ADJUST ALTITUDE · DOUBLE-CLICK WAYPOINT FOR ACCELERATED FLY-IN
-              </span>
-              <span style={{ color: "var(--signal-ember)" }}>
-                ● 14 SURVEY WAYPOINTS ACTIVE · 1 CRITICAL SUMMIT ISOLATED
-              </span>
-            </div>
-          </div>
-
         </div>
       </main>
 
+      {/* Symmetrical Cartographic Topography Section */}
+      <section id="cartography" className="landing-map-section">
+        <div className="landing-map-header">
+          <div className="map-title-group">
+            <span className="utopia-hash-badge">[ 02 // Spatial Cartography ]</span>
+            <h2 className="map-heading">
+              Topographic Elevation Map
+            </h2>
+          </div>
+          <div className="utopia-hash-scale" aria-hidden="true">
+            <span className="utopia-hash-tick active" />
+            <span className="utopia-hash-tick" />
+            <span className="utopia-hash-tick" />
+            <span className="utopia-hash-badge">Sector: 01-Alpha</span>
+            <span className="utopia-hash-tick" />
+            <span className="utopia-hash-tick" />
+            <span className="utopia-hash-tick active" />
+          </div>
+        </div>
+
+        {/* Embedded Live Topographic Navigation Map */}
+        <BrainMapView brain={demoBrain} height={540} />
+
+        <div className="landing-map-footer">
+          <span>
+            Tip: Drag to pan · Scroll wheel to adjust altitude · Double-click waypoint to fly in
+          </span>
+          <span className="map-stats-active">
+            ● 14 Survey Waypoints Active · 1 Critical Summit Isolated
+          </span>
+        </div>
+      </section>
+
       {/* How It Works Section with 3D Glowing FlipCards */}
-      <section id="how-it-works" className="landing-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem" }}>
+      {/* How It Works Section with 3D Glowing FlipCards */}
+      <section id="how-it-works" className="landing-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "3.5rem 1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-          <span className="utopia-hash-badge">[ I // UPKEEP LIFECYCLE ]</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.14em", color: "var(--paper-dim)" }}>
-            DISCIPLINED REPOSITORY HEALTH PROTOCOL
+          <span className="utopia-hash-badge">[ 01 // Upkeep Lifecycle ]</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-2xs)", letterSpacing: "0.1em", color: "var(--paper-dim)" }}>
+            Disciplined Repository Health Protocol
           </span>
         </div>
         <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem, 1.2rem + 1.5vw, 2.4rem)", fontWeight: 800, color: "var(--paper)", margin: "0 0 0.75rem 0", letterSpacing: "0.06em" }}>
-          HOW UATU KEEPS CODEBASES HEALTHY
+          How UATU Keeps Codebases Healthy
         </h2>
-        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
+        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "var(--text-base)", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
           Every upkeep run executes in an isolated sandbox. Zero code is modified without a passing verification test suite.
           Click or tilt any card to inspect the architectural specifications.
         </p>
 
-        <div className="feature-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem" }}>
+        <div className="feature-cards-grid">
+          {/* Card 01: Connect & Scope */}
           <FlipCard
-            height={310}
+            height={350}
             tilt={true}
             glare={true}
             glareOpacity={0.2}
             radius={8}
             front={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#060608" }}>
-                <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800 }}>01</span>
-                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem" }}>Connect &amp; Scope</h3>
-                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#060608" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "1rem" }}>01</span>
+                  <span className="card-flip-indicator" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}>
+                      <path d="m16 3 4 4-4 4" />
+                      <path d="M20 7H9a4 4 0 0 0-4 4v1" />
+                      <path d="m8 21-4-4 4-4" />
+                      <path d="M4 17h11a4 4 0 0 0 4-4v-1" />
+                    </svg>
+                    <span>FLIP</span>
+                  </span>
+                </div>
+                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem", margin: "0 0 0.5rem 0" }}>Connect &amp; Scope</h3>
+                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem", lineHeight: 1.55, margin: "0 0 1rem 0" }}>
                   Link repositories through fine-grained GitHub App permissions. Repositories initialize in passive,
                   zero-mutation surveillance mode.
                 </p>
-                <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="utopia-hash-badge" style={{ fontSize: "0.62rem" }}>PASSIVE BY DEFAULT</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--signal-ember)" }}>
-                    CLICK TO FLIP ↻
-                  </span>
+                <div style={{ marginTop: "auto", display: "flex", alignItems: "center" }}>
+                  <span className="utopia-hash-badge" style={{ fontSize: "0.72rem" }}>Passive by Default</span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#0c0c10" }}>
-                <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.9rem", margin: "0 0 0.5rem 0" }}>
-                  SPEC // PASSIVE SCOPING
-                </h4>
-                <ul style={{ fontSize: "0.78rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6 }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#0c0c10" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.85rem", margin: 0, letterSpacing: "0.08em" }}>
+                    Spec: Passive Scoping
+                  </h4>
+                  <span className="card-flip-indicator" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}>
+                      <path d="m16 3 4 4-4 4" />
+                      <path d="M20 7H9a4 4 0 0 0-4 4v1" />
+                      <path d="m8 21-4-4 4-4" />
+                      <path d="M4 17h11a4 4 0 0 0 4-4v-1" />
+                    </svg>
+                  </span>
+                </div>
+                <ul style={{ fontSize: "0.82rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6, margin: 0 }}>
                   <li>Read-only repository access token expires in 60 mins.</li>
                   <li>Branch protection rules respected unconditionally.</li>
                   <li>Explicit write-grant required before feature branch generation.</li>
@@ -341,34 +354,53 @@ export function Landing({
             }
           />
 
+          {/* Card 02: Survey & Plan */}
           <FlipCard
-            height={310}
+            height={350}
             tilt={true}
             glare={true}
             glareOpacity={0.2}
             radius={8}
             front={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#060608" }}>
-                <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800 }}>02</span>
-                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem" }}>Survey &amp; Plan</h3>
-                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#060608" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "1rem" }}>02</span>
+                  <span className="card-flip-indicator" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}>
+                      <path d="m16 3 4 4-4 4" />
+                      <path d="M20 7H9a4 4 0 0 0-4 4v1" />
+                      <path d="m8 21-4-4 4-4" />
+                      <path d="M4 17h11a4 4 0 0 0 4-4v-1" />
+                    </svg>
+                    <span>FLIP</span>
+                  </span>
+                </div>
+                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem", margin: "0 0 0.5rem 0" }}>Survey &amp; Plan</h3>
+                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem", lineHeight: 1.55, margin: "0 0 1rem 0" }}>
                   Autonomous static analysis maps code density and projects AST nodes onto the 2.5D elevation grid,
                   identifying high-risk vulnerability peaks.
                 </p>
-                <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="utopia-hash-badge" style={{ fontSize: "0.62rem" }}>AST TOPOGRAPHY</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--signal-ember)" }}>
-                    CLICK TO FLIP ↻
-                  </span>
+                <div style={{ marginTop: "auto", display: "flex", alignItems: "center" }}>
+                  <span className="utopia-hash-badge" style={{ fontSize: "0.72rem" }}>AST Topography</span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#0c0c10" }}>
-                <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.9rem", margin: "0 0 0.5rem 0" }}>
-                  SPEC // CARTOGRAPHIC PLANNING
-                </h4>
-                <ul style={{ fontSize: "0.78rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6 }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#0c0c10" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.85rem", margin: 0, letterSpacing: "0.08em" }}>
+                    Spec: Cartographic Planning
+                  </h4>
+                  <span className="card-flip-indicator" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}>
+                      <path d="m16 3 4 4-4 4" />
+                      <path d="M20 7H9a4 4 0 0 0-4 4v1" />
+                      <path d="m8 21-4-4 4-4" />
+                      <path d="M4 17h11a4 4 0 0 0 4-4v-1" />
+                    </svg>
+                  </span>
+                </div>
+                <ul style={{ fontSize: "0.82rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6, margin: 0 }}>
                   <li>Deterministic AST parsing via Babel and TypeScript compiler API.</li>
                   <li>Multi-file dependency graph mapping with circular loop detection.</li>
                   <li>Risk elevation assigned from CVSS scores and git churn metrics.</li>
@@ -377,34 +409,53 @@ export function Landing({
             }
           />
 
+          {/* Card 03: Sandbox Verification */}
           <FlipCard
-            height={310}
+            height={350}
             tilt={true}
             glare={true}
             glareOpacity={0.2}
             radius={8}
             front={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#060608" }}>
-                <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800 }}>03</span>
-                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem" }}>Sandbox Verification</h3>
-                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#060608" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "1rem" }}>03</span>
+                  <span className="card-flip-indicator" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}>
+                      <path d="m16 3 4 4-4 4" />
+                      <path d="M20 7H9a4 4 0 0 0-4 4v1" />
+                      <path d="m8 21-4-4 4-4" />
+                      <path d="M4 17h11a4 4 0 0 0 4-4v-1" />
+                    </svg>
+                    <span>FLIP</span>
+                  </span>
+                </div>
+                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem", margin: "0 0 0.5rem 0" }}>Sandbox Verification</h3>
+                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem", lineHeight: 1.55, margin: "0 0 1rem 0" }}>
                   Patches synthesize and test inside single-tenant ephemeral Linux sandboxes. Broken tests cause immediate
                   remediation rejection.
                 </p>
-                <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="utopia-hash-badge" style={{ fontSize: "0.62rem" }}>ZERO CONTAMINATION</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--signal-ember)" }}>
-                    CLICK TO FLIP ↻
-                  </span>
+                <div style={{ marginTop: "auto", display: "flex", alignItems: "center" }}>
+                  <span className="utopia-hash-badge" style={{ fontSize: "0.72rem" }}>Zero Contamination</span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#0c0c10" }}>
-                <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.9rem", margin: "0 0 0.5rem 0" }}>
-                  SPEC // SANDBOX ISOLATION
-                </h4>
-                <ul style={{ fontSize: "0.78rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6 }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#0c0c10" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.85rem", margin: 0, letterSpacing: "0.08em" }}>
+                    Spec: Sandbox Isolation
+                  </h4>
+                  <span className="card-flip-indicator" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}>
+                      <path d="m16 3 4 4-4 4" />
+                      <path d="M20 7H9a4 4 0 0 0-4 4v1" />
+                      <path d="m8 21-4-4 4-4" />
+                      <path d="M4 17h11a4 4 0 0 0 4-4v-1" />
+                    </svg>
+                  </span>
+                </div>
+                <ul style={{ fontSize: "0.82rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6, margin: 0 }}>
                   <li>Volatile memory sandboxes with strict command allowlists.</li>
                   <li>Network egress locked down during test suite execution.</li>
                   <li>Complete filesystem destruction upon triage termination.</li>
@@ -413,34 +464,53 @@ export function Landing({
             }
           />
 
+          {/* Card 04: Human Authority */}
           <FlipCard
-            height={310}
+            height={350}
             tilt={true}
             glare={true}
             glareOpacity={0.2}
             radius={8}
             front={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#060608" }}>
-                <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800 }}>04</span>
-                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem" }}>Human Authority</h3>
-                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#060608" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "1rem" }}>04</span>
+                  <span className="card-flip-indicator" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}>
+                      <path d="m16 3 4 4-4 4" />
+                      <path d="M20 7H9a4 4 0 0 0-4 4v1" />
+                      <path d="m8 21-4-4 4-4" />
+                      <path d="M4 17h11a4 4 0 0 0 4-4v-1" />
+                    </svg>
+                    <span>FLIP</span>
+                  </span>
+                </div>
+                <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.1rem", margin: "0 0 0.5rem 0" }}>Human Authority</h3>
+                <p style={{ color: "var(--paper-dim)", fontSize: "0.88rem", lineHeight: 1.55, margin: "0 0 1rem 0" }}>
                   UATU never merges code autonomously. Verified fixes are submitted as draft Pull Requests with telemetry
                   logs for your team to review.
                 </p>
-                <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="utopia-hash-badge" style={{ fontSize: "0.62rem" }}>DRAFT PULL REQUEST</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--signal-ember)" }}>
-                    CLICK TO FLIP ↻
-                  </span>
+                <div style={{ marginTop: "auto", display: "flex", alignItems: "center" }}>
+                  <span className="utopia-hash-badge" style={{ fontSize: "0.72rem" }}>Draft Pull Request</span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.25rem", background: "#0c0c10" }}>
-                <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.9rem", margin: "0 0 0.5rem 0" }}>
-                  SPEC // TOTAL HUMAN CONTROL
-                </h4>
-                <ul style={{ fontSize: "0.78rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6 }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#0c0c10" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.85rem", margin: 0, letterSpacing: "0.08em" }}>
+                    Spec: Total Human Control
+                  </h4>
+                  <span className="card-flip-indicator" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}>
+                      <path d="m16 3 4 4-4 4" />
+                      <path d="M20 7H9a4 4 0 0 0-4 4v1" />
+                      <path d="m8 21-4-4 4-4" />
+                      <path d="M4 17h11a4 4 0 0 0 4-4v-1" />
+                    </svg>
+                  </span>
+                </div>
+                <ul style={{ fontSize: "0.82rem", color: "var(--paper-dim)", paddingLeft: "1.2rem", lineHeight: 1.6, margin: 0 }}>
                   <li>Feature branches prefixed with uatu/ for instant identification.</li>
                   <li>Complete diff preview with unit test coverage report.</li>
                   <li>One-click accept, modify, or reject via GitHub PR UI.</li>
@@ -454,15 +524,15 @@ export function Landing({
       {/* Foundation Intelligence Section */}
       <section className="landing-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-          <span className="utopia-hash-badge">[ III // FOUNDATION INTELLIGENCE ]</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.14em", color: "var(--paper-dim)" }}>
-            MULTI-MODEL COMPLEXITY ROUTER
+          <span className="utopia-hash-badge">[ 03 // Foundation Intelligence ]</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-2xs)", letterSpacing: "0.1em", color: "var(--paper-dim)" }}>
+            Multi-Model Complexity Router
           </span>
         </div>
         <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem, 1.2rem + 1.5vw, 2.4rem)", fontWeight: 800, color: "var(--paper)", margin: "0 0 0.75rem 0", letterSpacing: "0.06em" }}>
-          POWERED BY ENTERPRISE FOUNDATION AI
+          Powered by Enterprise Foundation AI
         </h2>
-        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
+        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "var(--text-base)", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
           The autonomous Smart Complexity Router dispatches tasks to the optimal foundation model based on problem complexity,
           optimizing for cost, speed, and deep reasoning accuracy.
         </p>
@@ -470,7 +540,7 @@ export function Landing({
         <div className="models-showcase-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
           <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
             <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
-              FLAGSHIP SYNTHESIS
+              Flagship Synthesis
             </span>
             <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.2rem" }}>Amazon Nova 2 Omni</h3>
             <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6 }}>
@@ -487,7 +557,7 @@ export function Landing({
 
           <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
             <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
-              DEEP LOGIC
+              Deep Logic
             </span>
             <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.2rem" }}>Claude 3.5 Sonnet v2</h3>
             <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6 }}>
@@ -504,7 +574,7 @@ export function Landing({
 
           <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
             <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
-              HIGH THROUGHPUT
+              High Throughput
             </span>
             <h3 style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", fontSize: "1.2rem" }}>Amazon Nova Micro</h3>
             <p style={{ color: "var(--paper-dim)", fontSize: "0.85rem", lineHeight: 1.6 }}>
@@ -524,15 +594,15 @@ export function Landing({
       {/* Security Guarantees */}
       <section className="landing-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-          <span className="utopia-hash-badge">[ IV // SECURITY GUARANTEES ]</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.14em", color: "var(--paper-dim)" }}>
-            CRYPTOGRAPHIC BOUNDARIES
+          <span className="utopia-hash-badge">[ 04 // Security Guarantees ]</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-2xs)", letterSpacing: "0.1em", color: "var(--paper-dim)" }}>
+            Cryptographic Boundaries
           </span>
         </div>
         <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem, 1.2rem + 1.5vw, 2.4rem)", fontWeight: 800, color: "var(--paper)", margin: "0 0 0.75rem 0", letterSpacing: "0.06em" }}>
-          ENGINEERED FOR ABSOLUTE TRUST
+          Engineered for Absolute Trust
         </h2>
-        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
+        <p style={{ color: "var(--paper-dim)", maxWidth: 780, fontSize: "var(--text-base)", lineHeight: 1.6, margin: "0 0 2rem 0" }}>
           Your code is confidential and strictly protected by ephemeral memory sandboxes and enterprise AWS Bedrock boundaries.
         </p>
 
@@ -583,18 +653,18 @@ export function Landing({
           <span className="utopia-hash-tick active" />
           <span className="utopia-hash-tick" />
           <span className="utopia-hash-tick" />
-          <span className="utopia-hash-badge">SYSTEM: ONLINE</span>
+          <span className="utopia-hash-badge">System: Online</span>
           <span className="utopia-hash-tick" />
           <span className="utopia-hash-tick" />
           <span className="utopia-hash-tick active" />
         </div>
 
-        <div className="landing-foot-nav" style={{ display: "flex", gap: "1.25rem", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
+        <div className="landing-foot-nav" style={{ display: "flex", gap: "1.25rem", fontFamily: "var(--font-mono)", fontSize: "var(--text-2xs)" }}>
           <button type="button" onClick={() => navigate("/docs")} style={{ background: "none", border: "none", color: "var(--paper-dim)", cursor: "pointer" }}>
-            DOCUMENTATION ↗
+            Documentation ↗
           </button>
           <button type="button" onClick={() => setShowPrivacy(true)} style={{ background: "none", border: "none", color: "var(--paper-dim)", cursor: "pointer" }}>
-            PRIVACY POLICY ↗
+            Privacy Policy ↗
           </button>
           <a
             href="https://github.com/Erebuzzz/Universal-Autonomous-Triage-and-Upkeep"
@@ -602,7 +672,7 @@ export function Landing({
             rel="noreferrer"
             style={{ color: "var(--paper-dim)", textDecoration: "none" }}
           >
-            GITHUB REPOSITORY ↗
+            GitHub Repository ↗
           </a>
         </div>
       </footer>
