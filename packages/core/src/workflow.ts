@@ -1382,12 +1382,18 @@ export class WorkflowOrchestrator {
   }
 
   async getBrainMap(activatedIds: string[] = [], opts?: { userId?: string; repositoryId?: string }) {
+    // Derive organizationId the same way brainFor() does: first segment of
+    // the repo slug (e.g. "Erebuzzz" from "Erebuzzz__Universal-Autonomous-Triage-and-Upkeep").
+    // Without this, the storage key diverges and getGraph() returns undefined.
+    const repoId = opts?.repositoryId ?? this.repositoryId;
+    const orgFromRepo = repoId.includes("__") ? repoId.split("__")[0] : undefined;
+    const organizationId = orgFromRepo ?? opts?.userId ?? "local";
     const brain = new RepositoryBrain(
       this.deps.store,
-      opts?.repositoryId ?? this.repositoryId,
+      repoId,
       {
         userId: opts?.userId,
-        organizationId: opts?.userId ?? "local",
+        organizationId,
       },
     );
     const graph = await brain.getGraph();
