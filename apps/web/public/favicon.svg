@@ -1,39 +1,59 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <radialGradient id="fav-ember" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stopColor="#ff3b00" stopOpacity="1" />
+      <stop offset="60%" stopColor="#ff3b00" stopOpacity="0.8" />
+      <stop offset="100%" stopColor="#ff3b00" stopOpacity="0" />
+    </radialGradient>
+  </defs>
   <style>
-    .bg { fill: #000000; }
-    .monolith { stroke: #00ff9d; fill: #04080c; }
-    .iris { stroke: #ffffff; fill: #020406; }
-    .star { fill: #ff0055; }
-    .core { fill: #ffffff; }
+    .fav-bg { fill: #060608; }
+    .fav-ring { stroke: #f5f5f7; stroke-opacity: 0.35; }
+    .fav-cardinal { stroke: #ff3b00; }
+    .fav-aperture { fill: #0e0e14; stroke: #f5f5f7; stroke-opacity: 0.9; }
+    .fav-iris { stroke: #ff3b00; fill: #060608; }
+    .fav-pupil { fill: #ff3b00; }
+    .fav-core { fill: #ffffff; }
     @media (prefers-color-scheme: light) {
-      .bg { fill: #ffffff; }
-      .monolith { stroke: #059669; fill: #f0fdf4; }
-      .iris { stroke: #0f172a; fill: #ffffff; }
-      .star { fill: #dc2626; }
-      .core { fill: #ffffff; }
+      .fav-bg { fill: #faf8f5; }
+      .fav-ring { stroke: #141210; stroke-opacity: 0.25; }
+      .fav-cardinal { stroke: #ff3b00; }
+      .fav-aperture { fill: #ffffff; stroke: #141210; stroke-opacity: 0.9; }
+      .fav-iris { stroke: #ff3b00; fill: #f3eee7; }
+      .fav-pupil { fill: #ff3b00; }
+      .fav-core { fill: #ffffff; }
     }
   </style>
-  <rect width="32" height="32" rx="6" class="bg" />
-  <!-- Architectural Monolithic U Glyph -->
+
+  <!-- Base Plate -->
+  <rect width="32" height="32" rx="7" class="fav-bg" />
+
+  <!-- Outer Architectural Navigation Ring -->
+  <circle cx="16" cy="16" r="13" class="fav-ring" stroke-width="0.8" />
+
+  <!-- Cardinal Navigation Marks (N, S, E, W) -->
+  <line x1="16" y1="2" x2="16" y2="5" class="fav-cardinal" stroke-width="1.4" stroke-linecap="square" />
+  <line x1="16" y1="27" x2="16" y2="30" class="fav-ring" stroke-width="1" stroke-linecap="square" />
+  <line x1="2" y1="16" x2="5" y2="16" class="fav-ring" stroke-width="1" stroke-linecap="square" />
+  <line x1="27" y1="16" x2="30" y2="16" class="fav-ring" stroke-width="1" stroke-linecap="square" />
+
+  <!-- Inner Monolith Chamber -->
+  <circle cx="16" cy="16" r="10.5" class="fav-bg" stroke="currentColor" stroke-opacity="0.1" />
+
+  <!-- Geometric Watcher Eye Aperture -->
   <path
-    d="M 8 7 
-       L 8 19 
-       C 8 24 11.5 27 16 27 
-       C 20.5 27 24 24 24 19 
-       L 24 7 
-       L 21 7 
-       L 21 19 
-       C 21 22.5 18.5 24 16 24 
-       C 13.5 24 11 22.5 11 19 
-       L 11 7 
-       Z"
-    class="monolith"
+    d="M 5.5 16 Q 16 6.5 26.5 16 Q 16 25.5 5.5 16 Z"
+    class="fav-aperture"
     stroke-width="1.2"
     stroke-linejoin="round"
   />
+
   <!-- Celestial Concentric Iris Ring -->
-  <circle cx="16" cy="16" r="4" class="iris" stroke-width="1" />
-  <!-- Radiant Pupil Star -->
-  <circle cx="16" cy="16" r="2" class="star" />
-  <circle cx="16" cy="16" r="0.75" class="core" />
+  <circle cx="16" cy="16" r="5" class="fav-iris" stroke-width="1" />
+
+  <!-- Radiant Surgical Ember Pupil -->
+  <circle cx="16" cy="16" r="2.6" class="fav-pupil" />
+
+  <!-- Starlight Center Point -->
+  <circle cx="16" cy="16" r="0.9" class="fav-core" />
 </svg>

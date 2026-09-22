@@ -307,7 +307,7 @@ export function Landing({
             glareOpacity={0.2}
             radius={8}
             front={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#060608" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "var(--ink-surface)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "1rem" }}>01</span>
                   <span className="card-flip-indicator" aria-hidden="true">
@@ -331,7 +331,7 @@ export function Landing({
               </div>
             }
             back={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#0c0c10" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "var(--ink-elevated)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.85rem", margin: 0, letterSpacing: "0.08em" }}>
                     Spec: Passive Scoping
@@ -362,7 +362,7 @@ export function Landing({
             glareOpacity={0.2}
             radius={8}
             front={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#060608" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "var(--ink-surface)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "1rem" }}>02</span>
                   <span className="card-flip-indicator" aria-hidden="true">
@@ -386,7 +386,7 @@ export function Landing({
               </div>
             }
             back={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#0c0c10" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "var(--ink-elevated)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.85rem", margin: 0, letterSpacing: "0.08em" }}>
                     Spec: Cartographic Planning
@@ -417,7 +417,7 @@ export function Landing({
             glareOpacity={0.2}
             radius={8}
             front={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#060608" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "var(--ink-surface)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "1rem" }}>03</span>
                   <span className="card-flip-indicator" aria-hidden="true">
@@ -441,7 +441,7 @@ export function Landing({
               </div>
             }
             back={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#0c0c10" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "var(--ink-elevated)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.85rem", margin: 0, letterSpacing: "0.08em" }}>
                     Spec: Sandbox Isolation
@@ -472,7 +472,7 @@ export function Landing({
             glareOpacity={0.2}
             radius={8}
             front={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#060608" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "var(--ink-surface)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <span className="feature-idx" style={{ color: "var(--signal-ember)", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "1rem" }}>04</span>
                   <span className="card-flip-indicator" aria-hidden="true">
@@ -496,7 +496,7 @@ export function Landing({
               </div>
             }
             back={
-              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "#0c0c10" }}>
+              <div className="feature-card utopia-hud-frame" style={{ height: "100%", margin: 0, padding: "1.5rem", background: "var(--ink-elevated)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <h4 style={{ fontFamily: "var(--font-mono)", color: "var(--signal-ember)", fontSize: "0.85rem", margin: 0, letterSpacing: "0.08em" }}>
                     Spec: Total Human Control
@@ -538,7 +538,7 @@ export function Landing({
         </p>
 
         <div className="models-showcase-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
-          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
+          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "var(--ink-surface)" }}>
             <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
               Flagship Synthesis
             </span>
@@ -555,7 +555,7 @@ export function Landing({
             </div>
           </div>
 
-          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
+          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "var(--ink-surface)" }}>
             <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
               Deep Logic
             </span>
@@ -572,7 +572,7 @@ export function Landing({
             </div>
           </div>
 
-          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "#060608" }}>
+          <div className="model-showcase-card utopia-hud-frame" style={{ padding: "1.5rem", background: "var(--ink-surface)" }}>
             <span className="utopia-hash-badge" style={{ marginBottom: "0.75rem", display: "inline-block" }}>
               High Throughput
             </span>
@@ -607,7 +607,7 @@ export function Landing({
         </p>
 
         <div className="trust-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem" }}>
-          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "#060608" }}>
+          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "var(--ink-surface)" }}>
             <strong style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", display: "block", marginBottom: "0.4rem" }}>
               Zero Model Training
             </strong>
@@ -616,7 +616,7 @@ export function Landing({
             </p>
           </div>
 
-          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "#060608" }}>
+          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "var(--ink-surface)" }}>
             <strong style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", display: "block", marginBottom: "0.4rem" }}>
               Zero Auto-Merge
             </strong>
@@ -625,7 +625,7 @@ export function Landing({
             </p>
           </div>
 
-          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "#060608" }}>
+          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "var(--ink-surface)" }}>
             <strong style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", display: "block", marginBottom: "0.4rem" }}>
               Ephemeral Sandboxes
             </strong>
@@ -634,7 +634,7 @@ export function Landing({
             </p>
           </div>
 
-          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "#060608" }}>
+          <div className="trust-card utopia-hud-frame" style={{ padding: "1.25rem", background: "var(--ink-surface)" }}>
             <strong style={{ fontFamily: "var(--font-mono)", color: "var(--paper)", display: "block", marginBottom: "0.4rem" }}>
               Tenant Cryptographic Partitioning
             </strong>

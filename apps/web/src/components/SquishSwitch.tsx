@@ -46,7 +46,7 @@ export function SquishSwitch({
   label = "",
   disabled = false,
   trackColor = "#162032",
-  trackOnColor = "#10b981",
+  trackOnColor = "#ff3b00",
   thumbColor = "#64748b",
   thumbOnColor = "#ffffff",
   width = 56,

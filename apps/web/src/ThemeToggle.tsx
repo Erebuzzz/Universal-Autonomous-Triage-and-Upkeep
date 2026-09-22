@@ -11,7 +11,7 @@ export function useTheme(): { theme: Theme; toggleTheme: () => void; setTheme: (
     } catch {
       /* ignore */
     }
-    return "dark";
+    return "light";
   });
 
   useEffect(() => {
@@ -32,36 +32,37 @@ export function useTheme(): { theme: Theme; toggleTheme: () => void; setTheme: (
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
-  const isLight = theme === "light";
+  const isDark = theme === "dark";
 
   return (
     <div
       className={`theme-toggle-squish-wrap ${className}`}
       style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
-      title={isLight ? "Switch to AMOLED dark mode" : "Switch to porcelain green light mode"}
+      title={isDark ? "Switch to porcelain light mode" : "Switch to AMOLED dark mode"}
     >
       <span
         style={{
           fontSize: "0.75rem",
           fontFamily: "var(--font-mono)",
-          color: isLight ? "var(--text-muted)" : "var(--signal)",
+          color: isDark ? "var(--signal)" : "var(--paper-dim)",
           fontWeight: 600,
           userSelect: "none",
+          letterSpacing: "0.06em",
         }}
       >
-        {isLight ? "LIGHT" : "AMOLED"}
+        {isDark ? "AMOLED" : "LIGHT"}
       </span>
       <SquishSwitch
-        checked={isLight}
-        onChange={(checked) => setTheme(checked ? "light" : "dark")}
+        checked={isDark}
+        onChange={(checked) => setTheme(checked ? "dark" : "light")}
         width={50}
         height={26}
         radius={13}
-        trackColor="#0c121e"
-        trackOnColor="#10b981"
-        thumbColor="#64748b"
+        trackColor="#ded8d0"
+        trackOnColor="#ff3b00"
+        thumbColor="#635a52"
         thumbOnColor="#ffffff"
-        ariaLabel="Toggle between AMOLED dark and porcelain green light mode"
+        ariaLabel="Toggle between porcelain light and AMOLED dark mode"
       />
     </div>
   );

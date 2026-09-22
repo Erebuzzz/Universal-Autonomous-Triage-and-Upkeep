@@ -549,7 +549,7 @@ export function BrainMapView({
                     y={c.y - 5}
                     width="10"
                     height="10"
-                    fill="#000000"
+                    fill="var(--ink-surface)"
                     stroke="var(--paper)"
                     strokeWidth="1.4"
                   />
@@ -559,7 +559,7 @@ export function BrainMapView({
                     cx={c.x}
                     cy={c.y}
                     r="5"
-                    fill="#111115"
+                    fill="var(--ink-surface)"
                     stroke="var(--paper-dim)"
                     strokeWidth="1.2"
                   />
@@ -569,7 +569,7 @@ export function BrainMapView({
                     cx={c.x}
                     cy={c.y}
                     r="4"
-                    fill="#000000"
+                    fill="var(--ink-surface)"
                     stroke="var(--paper-muted)"
                     strokeWidth="1"
                   />
@@ -656,7 +656,7 @@ export function BrainMapView({
                 fontFamily: "var(--font-mono)",
                 fontSize: "0.7rem",
                 background: "var(--signal-ember)",
-                color: "#000000",
+                color: "#ffffff",
                 fontWeight: 700,
                 flex: 1,
                 cursor: "pointer",
