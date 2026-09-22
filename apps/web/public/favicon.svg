@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <style>
+    .bg { fill: #000000; }
+    .monolith { stroke: #00ff9d; fill: #04080c; }
+    .iris { stroke: #ffffff; fill: #020406; }
+    .star { fill: #ff0055; }
+    .core { fill: #ffffff; }
+    @media (prefers-color-scheme: light) {
+      .bg { fill: #ffffff; }
+      .monolith { stroke: #059669; fill: #f0fdf4; }
+      .iris { stroke: #0f172a; fill: #ffffff; }
+      .star { fill: #dc2626; }
+      .core { fill: #ffffff; }
+    }
+  </style>
+  <rect width="32" height="32" rx="6" class="bg" />
+  <!-- Architectural Monolithic U Glyph -->
+  <path
+    d="M 8 7 
+       L 8 19 
+       C 8 24 11.5 27 16 27 
+       C 20.5 27 24 24 24 19 
+       L 24 7 
+       L 21 7 
+       L 21 19 
+       C 21 22.5 18.5 24 16 24 
+       C 13.5 24 11 22.5 11 19 
+       L 11 7 
+       Z"
+    class="monolith"
+    stroke-width="1.2"
+    stroke-linejoin="round"
+  />
+  <!-- Celestial Concentric Iris Ring -->
+  <circle cx="16" cy="16" r="4" class="iris" stroke-width="1" />
+  <!-- Radiant Pupil Star -->
+  <circle cx="16" cy="16" r="2" class="star" />
+  <circle cx="16" cy="16" r="0.75" class="core" />
+</svg>

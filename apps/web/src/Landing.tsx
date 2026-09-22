@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, flags } from "./api";
+import { AudioToggle } from "./AudioToggle";
 import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
 import { FlipCard } from "./components/FlipCard";
@@ -9,6 +10,7 @@ import { SpecularButton } from "./components/SpecularButton";
 import { Logo } from "./Logo";
 import { navigate } from "./path";
 import { PrivacyModal } from "./PrivacyModal";
+import { sound } from "./SoundEngine";
 import { ThemeToggle } from "./ThemeToggle";
 
 type Props = {
@@ -149,6 +151,7 @@ export function Landing({
           >
             Privacy
           </button>
+          <AudioToggle />
           <ThemeToggle />
         </nav>
       </header>
@@ -158,11 +161,11 @@ export function Landing({
         <div className="landing-hero-content">
           <div className="hero-beacon">
             <span className="beacon-dot" />
-            UATU Autonomous Upkeep Active · ap-south-1
+            Celestial Observatory Active · ap-south-1
           </div>
 
           <h1 className="landing-brand">
-            Autonomous Codebase Triage with{" "}
+            The Celestial Watcher of Codebases:{" "}
             <span className="brand-duotone-ua">UA</span>
             <span className="brand-duotone-tu">TU</span>
           </h1>
@@ -178,6 +181,7 @@ export function Landing({
             {canOAuth ? (
               <SpecularButton
                 onClick={() => {
+                  sound.playCelestialChime();
                   window.location.href = api.githubLoginUrl();
                 }}
                 tint="#00ff9d"
@@ -200,7 +204,10 @@ export function Landing({
               </SpecularButton>
             ) : (
               <SpecularButton
-                onClick={onMockSignIn}
+                onClick={() => {
+                  sound.playCelestialChime();
+                  onMockSignIn();
+                }}
                 tint="#00ff9d"
                 lineColor="#ffffff"
                 baseColor="#10b981"

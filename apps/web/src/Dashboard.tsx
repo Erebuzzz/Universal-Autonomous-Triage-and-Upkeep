@@ -15,8 +15,10 @@ import {
 import { AuditTrail } from "./AuditTrail";
 import { BrainMapView } from "./BrainMapView";
 import { navigate } from "./path";
-import { PolicyScopeBar } from "./PolicyScopeBar";
+import { AudioToggle } from "./AudioToggle";
 import { Logo } from "./Logo";
+import { PolicyScopeBar } from "./PolicyScopeBar";
+import { sound } from "./SoundEngine";
 import { ThemeToggle } from "./ThemeToggle";
 
 const FLOW = [
@@ -104,6 +106,7 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
     try {
       const { grant: g } = await api.createFixtureGrant();
       onGrantChange(g);
+      sound.playCelestialChime();
     } catch (e) {
       captureError(e);
     } finally {
@@ -127,6 +130,7 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
       setAudit(body.audit ?? []);
       if (body.brain && Array.isArray(body.brain.nodes)) setBrain(body.brain);
       setSelectedFindingId(body.task.findings[0]?.id);
+      sound.playCelestialChime();
     } catch (e) {
       captureError(e);
     } finally {
@@ -144,6 +148,7 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
       setTask(result.task);
       setAudit(result.audit ?? []);
       if (result.brain && Array.isArray(result.brain.nodes)) setBrain(result.brain);
+      sound.playCelestialChime();
     } catch (e) {
       captureError(e);
     } finally {
@@ -177,6 +182,7 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
             ) : null}
             {user.login}
           </span>
+          <AudioToggle />
           <ThemeToggle />
           <button className="btn btn-ghost" type="button" onClick={() => navigate("/docs")}>
             Docs

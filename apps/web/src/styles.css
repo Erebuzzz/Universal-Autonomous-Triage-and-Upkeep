@@ -43,7 +43,21 @@
 
   --font-sans: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Consolas", monospace;
-  --font-display: "Cormorant Garamond", "Italiana", serif;
+  --font-display: "Cinzel", "Cormorant Garamond", "Italiana", serif;
+
+  /* Mathematical Fluid Typography Scale via CSS clamp */
+  --step--2: clamp(0.68rem, 0.66rem + 0.1vw, 0.74rem);
+  --step--1: clamp(0.78rem, 0.75rem + 0.15vw, 0.85rem);
+  --step-0: clamp(0.92rem, 0.88rem + 0.2vw, 1.02rem);
+  --step-1: clamp(1.12rem, 1.05rem + 0.35vw, 1.28rem);
+  --step-2: clamp(1.38rem, 1.25rem + 0.6vw, 1.65rem);
+  --step-3: clamp(1.75rem, 1.50rem + 1.1vw, 2.25rem);
+  --step-4: clamp(2.35rem, 1.95rem + 1.8vw, 3.15rem);
+  --step-5: clamp(3.20rem, 2.50rem + 2.8vw, 4.80rem);
+
+  /* Celestial Gold Accent */
+  --astral-gold: #ffd166;
+  --astral-gold-glow: rgba(255, 209, 102, 0.35);
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -3776,5 +3790,48 @@ button.target-option:hover:not(:disabled) {
   text-shadow: 0 0 18px rgba(255, 0, 85, 0.45);
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+/* Celestial Cartography & Astrolabe Neural Network */
+.astrolabe-ring {
+  fill: none;
+  stroke: #00ff9d;
+  stroke-width: 0.75px;
+  stroke-opacity: 0.12;
+  pointer-events: none;
+}
+
+.astrolabe-ring-major {
+  stroke-dasharray: 4 6;
+  stroke-opacity: 0.18;
+}
+
+.astrolabe-axis {
+  stroke: #00ff9d;
+  stroke-width: 0.6px;
+  stroke-opacity: 0.14;
+  stroke-dasharray: 3 5;
+}
+
+.astrolabe-coordinate-tick {
+  fill: #ffd166;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  opacity: 0.55;
+  user-select: none;
+  pointer-events: none;
+}
+
+.stellar-magnitude-ring {
+  fill: none;
+  stroke: #00ff9d;
+  stroke-width: 1px;
+  stroke-opacity: 0.25;
+}
+
+.audio-toggle-btn:hover {
+  border-color: rgba(0, 255, 157, 0.6) !important;
+  box-shadow: 0 0 12px rgba(0, 255, 157, 0.2);
 }
 

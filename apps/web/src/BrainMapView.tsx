@@ -8,6 +8,7 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import type { BrainMap } from "./api";
+import { sound } from "./SoundEngine";
 
 type BrainNode = BrainMap["nodes"][number];
 type BrainEdge = BrainMap["edges"][number];
@@ -647,8 +648,10 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
         ev.stopPropagation();
       }
 
-      // Trigger visual shockwave burst animation
+      // Trigger visual shockwave burst animation and celestial sound synthesis
       setShockwaveId(id);
+      sound.playCelestialChime();
+      sound.playShockwavePulse();
       window.setTimeout(() => {
         setShockwaveId((curr) => (curr === id ? null : curr));
       }, 700);
@@ -762,7 +765,8 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
       }
       lastTapRef.current = { id, time: now };
 
-      // Single click: inspect/select node
+      // Single click: inspect/select node with tactile feedback
+      sound.playTactileClick();
       setSelectedId((prev) => (prev === id ? null : id));
       const rect = shellRef.current?.getBoundingClientRect();
       if (rect && clientX && clientY) {
@@ -1031,6 +1035,54 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
               transformOrigin: "0 0",
             }}
           >
+            {/* Celestial Astrolabe Coordinate Grid & Constellation Rings */}
+            {(() => {
+              const rootNode = renderedNodes.find((n) => n.kind === "Organization" || n.kind === "Repository") ?? renderedNodes[0];
+              const center = rootNode ? positions.get(rootNode.id) : null;
+              if (!center) return null;
+              const radii = [140, 280, 460, 680, 920];
+              return (
+                <g className="astrolabe-grid" aria-hidden="true">
+                  {/* Concentric Astrolabe Coordinate Rings */}
+                  {radii.map((r, ri) => (
+                    <g key={`astrolabe-${r}`}>
+                      <circle
+                        cx={center.x}
+                        cy={center.y}
+                        r={r}
+                        className={`astrolabe-ring ${ri % 2 === 1 ? "astrolabe-ring-major" : ""}`}
+                      />
+                      <text
+                        x={center.x + r + 4}
+                        y={center.y - 4}
+                        className="astrolabe-coordinate-tick"
+                      >
+                        +{r}px · R{ri + 1}
+                      </text>
+                    </g>
+                  ))}
+                  {/* Celestial Meridian and Equator Axes */}
+                  <line
+                    x1={center.x - 980}
+                    y1={center.y}
+                    x2={center.x + 980}
+                    y2={center.y}
+                    className="astrolabe-axis"
+                  />
+                  <line
+                    x1={center.x}
+                    y1={center.y - 680}
+                    x2={center.x}
+                    y2={center.y + 680}
+                    className="astrolabe-axis"
+                  />
+                  <text x={center.x + 12} y={center.y - 650} className="astrolabe-coordinate-tick">
+                    CELESTIAL MERIDIAN 00h 00m
+                  </text>
+                </g>
+              );
+            })()}
+
             {/* Primary Hub Auric Halos */}
             {renderedNodes
               .filter((n) => n.kind === "Repository" || n.kind === "Organization")
@@ -1297,8 +1349,8 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
 
       <div className="brain-map-footer">
         <span className="brain-map-meta">
-          {renderedNodes.length}/{safeNodes.length} neurons active · tree depth {layout.maxDepth}
-          {" · organic synaptic tree"}
+          {renderedNodes.length}/{safeNodes.length} stellar nodes active · depth {layout.maxDepth}
+          {" · celestial astrolabe cartography"}
         </span>
         {selectedNode ? (
           <span className="brain-map-focus">
