@@ -16,7 +16,7 @@ import { AuditTrail } from "./AuditTrail";
 import { BrainMapView } from "./BrainMapView";
 import { navigate } from "./path";
 import { AudioToggle } from "./AudioToggle";
-import { Logo } from "./Logo";
+import { BrandLockup } from "./BrandLockup";
 import { PolicyScopeBar } from "./PolicyScopeBar";
 import { sound } from "./SoundEngine";
 import { ThemeToggle } from "./ThemeToggle";
@@ -159,16 +159,7 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div className="brand brand-header-group">
-          <Logo size={32} />
-          <div className="brand-text">
-            <div className="brand-mark">
-              <span className="brand-duotone-ua">UA</span>
-              <span className="brand-duotone-tu">TU</span>
-            </div>
-            <div className="brand-tag">Observe · Understand · Repair · Contribute</div>
-          </div>
-        </div>
+        <BrandLockup size="md" variant="tagline" href="/" />
         <div className="topbar-actions">
           <div className="mode-chip">
             <span className="live-dot" aria-hidden />

@@ -1,6 +1,6 @@
 import type { BrainMap } from "./api";
 import { BrainMapView } from "./BrainMapView";
-import { Logo } from "./Logo";
+import { BrandLockup } from "./BrandLockup";
 
 /** Local-only fixture: nested paths exercise dendrogram layout. */
 export function demoBrainMap(): BrainMap {
@@ -51,15 +51,8 @@ export function BrainMapPreview() {
   const brain = demoBrainMap();
   return (
     <div className="app-shell" style={{ padding: "1.5rem", maxWidth: 960, margin: "0 auto" }}>
-      <header className="brand brand-header-group" style={{ marginBottom: "1rem" }}>
-        <Logo size={32} />
-        <div className="brand-text">
-          <div className="brand-mark">
-            <span className="brand-duotone-ua">UA</span>
-            <span className="brand-duotone-tu">TU</span>
-          </div>
-          <div className="brand-sub">Brain map · biological neural dendrogram preview</div>
-        </div>
+      <header style={{ marginBottom: "1rem" }}>
+        <BrandLockup size="md" subtitle="Brain map · biological neural dendrogram preview" href="/" />
       </header>
       <BrainMapView brain={brain} />
     </div>

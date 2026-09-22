@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { api, flags } from "./api";
 import { AudioToggle } from "./AudioToggle";
+import { BrandLockup } from "./BrandLockup";
 import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
 import { FlipCard } from "./components/FlipCard";
 import { LatticeLoader } from "./components/LatticeLoader";
-import { PixelSnow } from "./components/PixelSnow";
 import { SpecularButton } from "./components/SpecularButton";
-import { Logo } from "./Logo";
 import { navigate } from "./path";
 import { PrivacyModal } from "./PrivacyModal";
 import { sound } from "./SoundEngine";
@@ -86,31 +85,13 @@ export function Landing({
   return (
     <div className="landing">
       <div className="landing-atmosphere" aria-hidden>
-        <PixelSnow
-          color="#00ff9d"
-          flakeSize={0.008}
-          pixelResolution={120}
-          speed={0.4}
-          density={0.04}
-          direction={135}
-          brightness={0.35}
-          className="landing-snow-bg"
-        />
-        <div className="landing-grid" />
-        <div className="landing-scan" />
+        <div className="utopia-matrix-grid" />
+        <div className="utopia-meridian-lines" />
+        <div className="utopia-starlight-glow" />
       </div>
 
       <header className="landing-nav">
-        <div className="brand brand-header-group">
-          <Logo size={36} />
-          <div className="brand-text">
-            <div className="brand-mark">
-              <span className="brand-duotone-ua">UA</span>
-              <span className="brand-duotone-tu">TU</span>
-            </div>
-            <div className="brand-tag">Universal Autonomous Triage &amp; Upkeep</div>
-          </div>
-        </div>
+        <BrandLockup size="lg" />
 
         <nav style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginLeft: "auto" }}>
           <a href="#how-it-works" className="landing-nav-link">
@@ -338,7 +319,7 @@ export function Landing({
 
       {/* How It Works Section with 3D Glowing FlipCards */}
       <section id="how-it-works" className="landing-section">
-        <div className="section-eyebrow">The Upkeep Lifecycle</div>
+        <div className="section-eyebrow">I // The Upkeep Lifecycle</div>
         <h2 className="section-heading">How UATU Keeps Repositories Healthy</h2>
         <p className="section-sub">
           Every triage run follows a disciplined engineering lifecycle. Zero code is modified without an isolated
@@ -506,7 +487,7 @@ export function Landing({
 
       {/* Neural Knowledge Brain Showcase */}
       <section id="neural-brain" className="landing-section">
-        <div className="section-eyebrow">Living Memory</div>
+        <div className="section-eyebrow">II // Spatial Code Knowledge</div>
         <h2 className="section-heading">
           Biological Neural Brain: Spatial Code Knowledge
         </h2>
@@ -523,7 +504,7 @@ export function Landing({
 
       {/* Foundation Intelligence Section */}
       <section className="landing-section">
-        <div className="section-eyebrow">Foundation Intelligence</div>
+        <div className="section-eyebrow">III // Foundation Intelligence</div>
         <h2 className="section-heading">Powered by Leading AI Models</h2>
         <p className="section-sub">
           The autonomous Smart Complexity Router routes tasks to the optimal model based on task difficulty, or you can
@@ -574,7 +555,7 @@ export function Landing({
 
       {/* Safety & Security Guarantees */}
       <section className="landing-section">
-        <div className="section-eyebrow">Security Guarantees</div>
+        <div className="section-eyebrow">IV // Security Guarantees</div>
         <h2 className="section-heading">Engineered for Absolute Trust</h2>
         <p className="section-sub">Your code is private and protected by cryptographic boundaries.</p>
 
@@ -600,13 +581,7 @@ export function Landing({
 
       {/* Footer */}
       <footer className="landing-foot">
-        <div className="brand brand-header-group">
-          <Logo size={26} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--paper)" }}>
-            <span className="brand-duotone-ua">UA</span>
-            <span className="brand-duotone-tu">TU</span>: Observe · Understand · Repair · Contribute
-          </span>
-        </div>
+        <BrandLockup size="sm" variant="tagline" />
 
         <div className="landing-foot-nav">
           <button type="button" onClick={() => navigate("/docs")}>

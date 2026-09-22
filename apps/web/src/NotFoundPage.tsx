@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { BrainMap } from "./api";
 import { BrainMapView } from "./BrainMapView";
-import { Logo } from "./Logo";
+import { BrandLockup } from "./BrandLockup";
 import { currentPath, navigate } from "./path";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -42,13 +42,15 @@ export function NotFoundPage({ onGoHome }: { onGoHome?: () => void }) {
   return (
     <div className="void-page">
       <div className="landing-atmosphere" aria-hidden>
-        <div className="landing-grid" />
+        <div className="utopia-matrix-grid" />
+        <div className="utopia-meridian-lines" />
+        <div className="utopia-starlight-glow" />
       </div>
 
       <div className="void-card">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <Logo size={28} />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+            <BrandLockup size="sm" showTag={false} href="/" />
             <span className="void-badge">
               ● Synaptic Disconnection · Error 404
             </span>

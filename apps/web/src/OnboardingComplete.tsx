@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Grant, InstallationRepo, MeResponse, UatuUser } from "./api";
 import { api, flags, oauthLoginUrl } from "./api";
+import { BrandLockup } from "./BrandLockup";
 import {
   clearInstallQueryParams,
   clearPendingInstall,
@@ -188,8 +189,7 @@ export function OnboardingComplete({
   if (authLoading) {
     return (
       <div className="boot-screen" role="status" aria-live="polite">
-        <div className="brand-mark">UATU</div>
-        <p className="brand-tag">Confirming GitHub App install…</p>
+        <BrandLockup size="lg" variant="minimal" subtitle="Confirming GitHub App install…" />
       </div>
     );
   }
@@ -198,15 +198,12 @@ export function OnboardingComplete({
     return (
       <div className="complete-shell">
         <div className="complete-atmosphere" aria-hidden>
-          <div className="landing-grid" />
+          <div className="utopia-matrix-grid" />
+          <div className="utopia-meridian-lines" />
+          <div className="utopia-starlight-glow" />
         </div>
         <header className="landing-nav">
-          <div className="brand brand-header-group">
-            <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
-            <div className="brand-text">
-              <div className="brand-mark">UATU</div>
-            </div>
-          </div>
+          <BrandLockup size="lg" href="/" />
         </header>
         <main className="complete-main">
           <p className="landing-eyebrow">GitHub App · pending session</p>
@@ -253,17 +250,13 @@ export function OnboardingComplete({
   return (
     <div className="complete-shell">
       <div className="complete-atmosphere" aria-hidden>
-        <div className="landing-grid" />
+        <div className="utopia-matrix-grid" />
+        <div className="utopia-meridian-lines" />
+        <div className="utopia-starlight-glow" />
       </div>
 
       <header className="topbar">
-        <div className="brand brand-header-group">
-          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
-          <div className="brand-text">
-            <div className="brand-mark">UATU</div>
-            <div className="brand-tag">Connected · {user?.login ?? me.user.login}</div>
-          </div>
-        </div>
+        <BrandLockup size="md" subtitle={`Connected · ${user?.login ?? me.user.login}`} href="/" />
         <div className="topbar-actions">
           <button
             className="btn btn-ghost"

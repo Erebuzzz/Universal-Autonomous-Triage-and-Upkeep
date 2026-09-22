@@ -1,3 +1,5 @@
+import { BrandLockup } from "./BrandLockup";
+
 interface Props {
   isOpen?: boolean;
   onClose: () => void;
@@ -9,13 +11,14 @@ export function PrivacyModal({ isOpen = true, onClose, asFullPage = false }: Pro
 
   const content = (
     <div className={asFullPage ? "void-card" : "modal-card"}>
-      <header className={asFullPage ? "" : "modal-header"}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+      <header className={asFullPage ? "" : "modal-header"} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+          <BrandLockup size="sm" showTag={false} />
           <span className="hero-beacon" style={{ margin: 0, padding: "0.2rem 0.5rem" }}>
             <span className="beacon-dot" />
             Security Protocol
           </span>
-          <h3 style={{ margin: 0, fontSize: "1.35rem", color: "var(--paper)" }}>
+          <h3 style={{ margin: 0, fontSize: "1.2rem", color: "var(--paper)" }}>
             Privacy Policy &amp; Code Safety
           </h3>
         </div>
@@ -99,7 +102,9 @@ export function PrivacyModal({ isOpen = true, onClose, asFullPage = false }: Pro
     return (
       <div className="void-page">
         <div className="landing-atmosphere" aria-hidden>
-          <div className="landing-grid" />
+          <div className="utopia-matrix-grid" />
+          <div className="utopia-meridian-lines" />
+          <div className="utopia-starlight-glow" />
         </div>
         {content}
       </div>

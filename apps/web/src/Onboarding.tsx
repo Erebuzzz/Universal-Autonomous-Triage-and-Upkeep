@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Grant, InstallationRepo, MeResponse, UatuUser } from "./api";
 import { api, flags } from "./api";
+import { BrandLockup } from "./BrandLockup";
 import { githubAppInstallUrl, githubAppSetupUrl } from "./path";
 
 type Props = {
@@ -111,13 +112,7 @@ export function Onboarding({
   return (
     <div className="onboard">
       <header className="topbar">
-        <div className="brand brand-header-group">
-          <img src="/logo.png" alt="UATU Logo" className="brand-logo" />
-          <div className="brand-text">
-            <div className="brand-mark">UATU</div>
-            <div className="brand-tag">Setup · {user.login}</div>
-          </div>
-        </div>
+        <BrandLockup size="md" subtitle={`Setup · ${user.login}`} href="/" />
         <div className="topbar-actions">
           <button className="btn btn-ghost" type="button" onClick={onSkipToDashboard}>
             Skip to console

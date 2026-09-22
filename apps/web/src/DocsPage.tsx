@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { demoBrainMap } from "./BrainMapPreview";
 import { BrainMapView } from "./BrainMapView";
+import { BrandLockup } from "./BrandLockup";
 import { Stepper, Step } from "./components/Stepper";
-import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
 type DocId =
@@ -90,16 +90,7 @@ export function DocsPage({ onBack }: { onBack: () => void }) {
   return (
     <div className="docs-page">
       <header className="docs-topbar">
-        <div className="brand-header-group" style={{ cursor: "pointer" }} onClick={onBack}>
-          <Logo size={32} />
-          <div className="brand-text">
-            <div className="brand-mark">
-              <span className="brand-duotone-ua">UA</span>
-              <span className="brand-duotone-tu">TU</span>
-            </div>
-            <div className="brand-tag">User Documentation</div>
-          </div>
-        </div>
+        <BrandLockup size="md" onClick={onBack} />
         <div className="docs-topbar-actions" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <ThemeToggle />
           <button type="button" className="btn btn-ghost" onClick={onBack}>

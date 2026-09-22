@@ -11,6 +11,7 @@ import {
   type UatuUser,
 } from "./api";
 import { BrainMapPreview } from "./BrainMapPreview";
+import { BrandLockup } from "./BrandLockup";
 import { Dashboard } from "./Dashboard";
 import { DocsPage } from "./DocsPage";
 import { Landing } from "./Landing";
@@ -282,9 +283,7 @@ export function App() {
   if (gate === "loading") {
     return (
       <div className="boot-screen" role="status" aria-live="polite">
-        <img src="/logo.png" alt="UATU Logo" className="landing-hero-logo" style={{ width: 64, height: 64 }} />
-        <div className="brand-mark">UATU</div>
-        <p className="brand-tag">Loading operator surface…</p>
+        <BrandLockup size="lg" variant="minimal" subtitle="Loading operator surface…" />
         {bootError ? <p className="landing-health-warn">{bootError}</p> : null}
       </div>
     );
