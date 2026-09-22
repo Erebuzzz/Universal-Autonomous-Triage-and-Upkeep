@@ -88,12 +88,12 @@ export function Landing({
       <div className="landing-atmosphere" aria-hidden>
         <PixelSnow
           color="#00ff9d"
-          flakeSize={0.015}
-          pixelResolution={180}
-          speed={0.85}
-          density={0.25}
+          flakeSize={0.008}
+          pixelResolution={120}
+          speed={0.4}
+          density={0.04}
           direction={135}
-          brightness={0.85}
+          brightness={0.35}
           className="landing-snow-bg"
         />
         <div className="landing-grid" />
@@ -113,40 +113,25 @@ export function Landing({
         </div>
 
         <nav style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginLeft: "auto" }}>
-          <a
-            href="#how-it-works"
-            className="landing-foot-nav"
-            style={{
-              color: "var(--text-dim)",
-              textDecoration: "none",
-              fontSize: "0.85rem",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
+          <a href="#how-it-works" className="landing-nav-link">
             How It Works
           </a>
+          <a href="#neural-brain" className="landing-nav-link">
+            Neural Brain
+          </a>
           <a
-            href="#neural-brain"
-            className="landing-foot-nav"
-            style={{
-              color: "var(--text-dim)",
-              textDecoration: "none",
-              fontSize: "0.85rem",
-              fontFamily: "var(--font-mono)",
+            href="/docs"
+            className="landing-nav-link"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/docs");
             }}
           >
-            Neural Brain
+            User Docs
           </a>
           <button
             type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() => navigate("/docs")}
-          >
-            User Docs
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
+            className="landing-nav-link landing-nav-btn"
             onClick={() => setShowPrivacy(true)}
           >
             Privacy
@@ -305,8 +290,7 @@ export function Landing({
               />
               <button
                 type="button"
-                className="brain-zoom-btn"
-                style={{ padding: "0.15rem 0.5rem", fontSize: "0.68rem" }}
+                className="telemetry-ctrl-btn"
                 onClick={() => setIsPaused((p) => !p)}
                 title={isPaused ? "Resume simulation" : "Pause simulation"}
               >
@@ -314,8 +298,7 @@ export function Landing({
               </button>
               <button
                 type="button"
-                className="brain-zoom-btn"
-                style={{ padding: "0.15rem 0.5rem", fontSize: "0.68rem" }}
+                className="telemetry-ctrl-btn"
                 onClick={() => setActiveStep((prev) => (prev + 1) % TELEMETRY_STEPS.length)}
                 title="Step forward"
               >
@@ -347,8 +330,8 @@ export function Landing({
           </div>
 
           <div className="telemetry-footer">
-            <span>TARGET: demo-vulnerable (sandbox)</span>
-            <span style={{ color: "var(--signal-bright)" }}>PASSED (2/2 CHECKS)</span>
+            <span>Target: demo-vulnerable (sandbox)</span>
+            <span style={{ color: "var(--signal-bright)" }}>Passed (2/2 checks)</span>
           </div>
         </div>
       </main>
@@ -364,13 +347,13 @@ export function Landing({
 
         <div className="feature-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem" }}>
           <FlipCard
-            height={260}
+            height={310}
             tilt={true}
             glare={true}
             glareOpacity={0.25}
-            radius={18}
+            radius={16}
             front={
-              <div className="feature-card" style={{ height: "100%", margin: 0 }}>
+              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem" }}>
                 <span className="feature-idx">01</span>
                 <h3>Connect &amp; Scope</h3>
                 <p>
@@ -379,15 +362,20 @@ export function Landing({
                 </p>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="feature-tag">Passive by Default</span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--signal-bright)", fontFamily: "var(--font-mono)" }}>Flip specs ↻</span>
+                  <span className="flip-hint-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                      <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                    </svg>
+                    Click to Flip
+                  </span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card" style={{ height: "100%", margin: 0, borderColor: "rgba(0, 255, 157, 0.4)" }}>
+              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem", borderColor: "rgba(0, 255, 157, 0.4)" }}>
                 <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 01</span>
                 <h3>Security Enclave</h3>
-                <p style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "0.85rem", lineHeight: 1.55 }}>
                   Minted installation tokens expire after 60 minutes. Read-only permissions allow initial AST indexing without write grants.
                 </p>
                 <div style={{ marginTop: "auto" }}>
@@ -398,13 +386,13 @@ export function Landing({
           />
 
           <FlipCard
-            height={260}
+            height={310}
             tilt={true}
             glare={true}
             glareOpacity={0.25}
-            radius={18}
+            radius={16}
             front={
-              <div className="feature-card" style={{ height: "100%", margin: 0 }}>
+              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem" }}>
                 <span className="feature-idx">02</span>
                 <h3>Autonomous Diagnosis</h3>
                 <p>
@@ -413,15 +401,20 @@ export function Landing({
                 </p>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="feature-tag">Smart Complexity Router</span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--signal-bright)", fontFamily: "var(--font-mono)" }}>Flip specs ↻</span>
+                  <span className="flip-hint-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                      <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                    </svg>
+                    Click to Flip
+                  </span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card" style={{ height: "100%", margin: 0, borderColor: "rgba(0, 255, 157, 0.4)" }}>
+              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem", borderColor: "rgba(0, 255, 157, 0.4)" }}>
                 <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 02</span>
                 <h3>AST &amp; Dependency Graph</h3>
-                <p style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "0.85rem", lineHeight: 1.55 }}>
                   Heuristics and Bedrock LLM classify bugs into severity tiers. Security vulnerabilities match against GitHub Advisory Database.
                 </p>
                 <div style={{ marginTop: "auto" }}>
@@ -432,13 +425,13 @@ export function Landing({
           />
 
           <FlipCard
-            height={260}
+            height={310}
             tilt={true}
             glare={true}
             glareOpacity={0.25}
-            radius={18}
+            radius={16}
             front={
-              <div className="feature-card" style={{ height: "100%", margin: 0 }}>
+              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem" }}>
                 <span className="feature-idx">03</span>
                 <h3>Sandboxed Repair</h3>
                 <p>
@@ -447,15 +440,20 @@ export function Landing({
                 </p>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="feature-tag">Isolated Sandboxes</span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--signal-bright)", fontFamily: "var(--font-mono)" }}>Flip specs ↻</span>
+                  <span className="flip-hint-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                      <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                    </svg>
+                    Click to Flip
+                  </span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card" style={{ height: "100%", margin: 0, borderColor: "rgba(0, 255, 157, 0.4)" }}>
+              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem", borderColor: "rgba(0, 255, 157, 0.4)" }}>
                 <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 03</span>
                 <h3>Zero Host Leakage</h3>
-                <p style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "0.85rem", lineHeight: 1.55 }}>
                   Ephemeral sandbox clones run test runners with strict timeouts. Any modified files outside the capability allowlist trigger instant task abort.
                 </p>
                 <div style={{ marginTop: "auto" }}>
@@ -466,13 +464,13 @@ export function Landing({
           />
 
           <FlipCard
-            height={260}
+            height={310}
             tilt={true}
             glare={true}
             glareOpacity={0.25}
-            radius={18}
+            radius={16}
             front={
-              <div className="feature-card" style={{ height: "100%", margin: 0 }}>
+              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem" }}>
                 <span className="feature-idx">04</span>
                 <h3>Review &amp; Merge</h3>
                 <p>
@@ -481,15 +479,20 @@ export function Landing({
                 </p>
                 <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="feature-tag">Human in the Loop</span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--signal-bright)", fontFamily: "var(--font-mono)" }}>Flip specs ↻</span>
+                  <span className="flip-hint-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                      <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                    </svg>
+                    Click to Flip
+                  </span>
                 </div>
               </div>
             }
             back={
-              <div className="feature-card" style={{ height: "100%", margin: 0, borderColor: "rgba(0, 255, 157, 0.4)" }}>
+              <div className="feature-card" style={{ height: "100%", margin: 0, padding: "1.25rem", borderColor: "rgba(0, 255, 157, 0.4)" }}>
                 <span className="feature-idx" style={{ color: "var(--signal-bright)" }}>SPEC 04</span>
                 <h3>Pass Certification</h3>
-                <p style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "0.85rem", lineHeight: 1.55 }}>
                   Draft PRs include detailed test reproduction logs, root-cause rationale, and rollback instructions. Zero auto-merges are ever performed.
                 </p>
                 <div style={{ marginTop: "auto" }}>
@@ -530,34 +533,40 @@ export function Landing({
         <div className="models-showcase-grid">
           <div className="model-showcase-card">
             <span className="model-tier-chip tier-flagship">Flagship Synthesis</span>
-            <h4>Amazon Nova 2 Omni</h4>
+            <h3>Amazon Nova 2 Omni</h3>
             <p>Next-generation high-capacity reasoning model for deep root-cause isolation and unified diff generation.</p>
             <div className="model-metrics">
-              <span>8M TPM</span>
-              <span>20 RPM</span>
-              <span>Flagship Tier</span>
+              <span className="metric-pill"><span className="metric-key">TPM:</span> 8M</span>
+              <span className="metric-divider" aria-hidden="true">|</span>
+              <span className="metric-pill"><span className="metric-key">RPM:</span> 20</span>
+              <span className="metric-divider" aria-hidden="true">|</span>
+              <span className="metric-pill"><span className="metric-key">Tier:</span> Flagship</span>
             </div>
           </div>
 
           <div className="model-showcase-card">
             <span className="model-tier-chip tier-flagship">Deep Logic</span>
-            <h4>Claude 3.5 Sonnet v2</h4>
+            <h3>Claude 3.5 Sonnet v2</h3>
             <p>Industry standard for intricate functional code logic and nuanced edge-case bug fixes.</p>
             <div className="model-metrics">
-              <span>800K TPM</span>
-              <span>1 RPM</span>
-              <span>Flagship Tier</span>
+              <span className="metric-pill"><span className="metric-key">TPM:</span> 800K</span>
+              <span className="metric-divider" aria-hidden="true">|</span>
+              <span className="metric-pill"><span className="metric-key">RPM:</span> 1</span>
+              <span className="metric-divider" aria-hidden="true">|</span>
+              <span className="metric-pill"><span className="metric-key">Tier:</span> Flagship</span>
             </div>
           </div>
 
           <div className="model-showcase-card">
             <span className="model-tier-chip tier-fast">High Throughput</span>
-            <h4>Amazon Nova Micro</h4>
+            <h3>Amazon Nova Micro</h3>
             <p>Ultra-low latency inference for rapid AST classification, issue triage, and next-action planning.</p>
             <div className="model-metrics">
-              <span>400K TPM</span>
-              <span>20 RPM</span>
-              <span>Fast Tier</span>
+              <span className="metric-pill"><span className="metric-key">TPM:</span> 400K</span>
+              <span className="metric-divider" aria-hidden="true">|</span>
+              <span className="metric-pill"><span className="metric-key">RPM:</span> 20</span>
+              <span className="metric-divider" aria-hidden="true">|</span>
+              <span className="metric-pill"><span className="metric-key">Tier:</span> Fast</span>
             </div>
           </div>
         </div>
@@ -601,17 +610,17 @@ export function Landing({
 
         <div className="landing-foot-nav">
           <button type="button" onClick={() => navigate("/docs")}>
-            Documentation
+            Documentation ↗
           </button>
           <button type="button" onClick={() => setShowPrivacy(true)}>
-            Privacy Policy
+            Privacy Policy ↗
           </button>
           <a
             href="https://github.com/Erebuzzz/Universal-Autonomous-Triage-and-Upkeep"
             target="_blank"
             rel="noreferrer"
           >
-            GitHub Repository
+            GitHub Repository ↗
           </a>
         </div>
       </footer>

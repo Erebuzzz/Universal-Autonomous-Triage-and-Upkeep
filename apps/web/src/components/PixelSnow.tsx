@@ -113,7 +113,7 @@ void main() {
   vec3 timeAnim = timeSpeed * 0.1 * vec3(7.0, 8.0, 5.0);
 
   float t = 0.0;
-  for (int i = 0; i < 128; i++) {
+  for (int i = 0; i < 40; i++) {
     if (t >= uFarPlane) break;
     
     vec3 fpos = floor(pos);
@@ -271,7 +271,7 @@ export function PixelSnow({
       return;
     }
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(1);
     renderer.setSize(container.offsetWidth, container.offsetHeight);
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);

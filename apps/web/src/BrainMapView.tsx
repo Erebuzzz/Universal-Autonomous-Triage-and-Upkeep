@@ -960,6 +960,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                 onClick={() => toggleKind(kind)}
                 style={{ ["--chip-accent" as string]: kindStroke(kind) }}
               >
+                <span className="brain-chip-dot" style={{ backgroundColor: kindStroke(kind) }} />
                 {kind}
               </button>
             );
@@ -1129,7 +1130,7 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
 
                   {/* Animated Action Potential Impulse along active axons */}
                   {!reducedMotion && hot ? (
-                    <circle r={2.5} className="bio-axon-action-potential" filter="url(#bio-soft)">
+                    <circle r={2.5} className="bio-axon-action-potential">
                       <animateMotion
                         dur="2.4s"
                         repeatCount="indefinite"
@@ -1259,13 +1260,13 @@ export function BrainMapView({ brain }: { brain: BrainMap }) {
                         }
                       }}
                     >
-                      {/* Synaptic Gateway Hitbox / Circle */}
+                      {/* Synaptic Gateway Hitbox / Enlarged Hit Area */}
+                      <circle r={16} fill="transparent" pointerEvents="all" />
                       <circle
-                        r={9}
+                        r={10}
                         fill={isExpanded ? "#030708" : "#00ff9d"}
                         stroke={isExpanded ? "#ff0055" : "#030708"}
                         strokeWidth={1.5}
-                        filter="url(#bio-soft)"
                       />
                       {/* Plus or Minus Icon */}
                       {isExpanded ? (
