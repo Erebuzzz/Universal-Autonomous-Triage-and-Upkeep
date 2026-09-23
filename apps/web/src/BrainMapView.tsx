@@ -4,7 +4,6 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
-  type WheelEvent as ReactWheelEvent,
 } from "react";
 import type { BrainMap } from "./api";
 import { sound } from "./SoundEngine";
@@ -233,15 +232,26 @@ export function BrainMapView({
     }
   };
 
-  // Zoom Handlers
-  const handleWheel = (e: ReactWheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.15 : 0.87;
-    setTransform((prev) => {
-      const nextK = Math.max(0.4, Math.min(3.5, prev.k * factor));
-      return { ...prev, k: nextK };
-    });
-  };
+  // Zoom Handlers: Attached with { passive: false } via ref so e.preventDefault()
+  // executes cleanly without browser passive listener violations.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.15 : 0.87;
+      setTransform((prev) => {
+        const nextK = Math.max(0.4, Math.min(3.5, prev.k * factor));
+        return { ...prev, k: nextK };
+      });
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, []);
 
   const zoomIn = () => {
     sound.playTactileClick();
@@ -307,7 +317,6 @@ export function BrainMapView({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onWheel={handleWheel}
     >
       {/* Topographic Telemetry HUD Bar */}
       <div className="topo-hud-telemetry">

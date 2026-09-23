@@ -96,6 +96,10 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
       setError(null);
       return;
     }
+    if (e instanceof ApiError && (e.status === 429 || e.code === "quota_exceeded")) {
+      setError(`Execution limit: ${e.message}. Please wait a moment before starting another run.`);
+      return;
+    }
     setError(e instanceof Error ? e.message : String(e));
   }
 
@@ -140,15 +144,37 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
 
   async function runSelected() {
     if (!task) return;
+    if (!task.findings?.length) {
+      setError("No findings available to remediate. Start a triage run on a target with defects.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setPolicyDenial(null);
     try {
       const result = await api.runTask(task.id, selectedFindingId, selectedModel);
       setTask(result.task);
-      setAudit(result.audit ?? []);
-      if (result.brain && Array.isArray(result.brain.nodes)) setBrain(result.brain);
+      if (result.audit && result.audit.length) setAudit(result.audit);
+      if (result.brain && Array.isArray(result.brain.nodes) && result.brain.nodes.length) setBrain(result.brain);
       sound.playCelestialChime();
+
+      // If queued asynchronously, poll for task completion
+      if (result.task.state !== "PR_ARTIFACT_READY" && result.task.state !== "PR_CREATED") {
+        for (let i = 0; i < 15; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          const poll = await api.getTask(task.id);
+          setTask(poll.task);
+          if (poll.audit && poll.audit.length) setAudit(poll.audit);
+          if (poll.brain && Array.isArray(poll.brain.nodes) && poll.brain.nodes.length) setBrain(poll.brain);
+          if (
+            poll.task.state === "PR_ARTIFACT_READY" ||
+            poll.task.state === "PR_CREATED" ||
+            poll.task.state === "NEEDS_HUMAN"
+          ) {
+            break;
+          }
+        }
+      }
     } catch (e) {
       captureError(e);
     } finally {
@@ -296,8 +322,15 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
             <button
               className="btn"
               type="button"
-              disabled={busy || !task || task.state === "PR_ARTIFACT_READY" || task.state === "PR_CREATED"}
+              disabled={
+                busy ||
+                !task ||
+                !task.findings?.length ||
+                task.state === "PR_ARTIFACT_READY" ||
+                task.state === "PR_CREATED"
+              }
               onClick={runSelected}
+              title={!task?.findings?.length ? "No findings available to remediate" : "Run automated investigation, patch, and verification"}
             >
               Run to PR
             </button>

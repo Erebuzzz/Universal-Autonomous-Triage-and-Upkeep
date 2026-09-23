@@ -45,6 +45,12 @@ export class QuotaStore {
         raw.monthlyRuns = 0;
         raw.monthKey = monthKey(now);
       }
+      if (raw.concurrentRuns > 0 && raw.updatedAt) {
+        const ageMs = now.getTime() - new Date(raw.updatedAt).getTime();
+        if (ageMs > 120_000) {
+          raw.concurrentRuns = 0;
+        }
+      }
       return raw;
     } catch {
       return {

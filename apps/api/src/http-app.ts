@@ -469,19 +469,23 @@ export function createHttpApp(ctx: AppContext): express.Express {
 
       if (asyncJobs && jobQueueUrl) {
         await quota.beginRun(user.id);
-        const sqs = new SQSClient({});
-        await sqs.send(
-          new SendMessageCommand({
-            QueueUrl: jobQueueUrl,
-            MessageBody: JSON.stringify({
-              type: "run_to_completion",
-              taskId: paramId(req),
-              selectedFindingId: req.body.selectedFindingId,
-              userId: user.id,
-              modelPreference,
+        try {
+          const sqs = new SQSClient({});
+          await sqs.send(
+            new SendMessageCommand({
+              QueueUrl: jobQueueUrl,
+              MessageBody: JSON.stringify({
+                type: "run_to_completion",
+                taskId: paramId(req),
+                selectedFindingId: req.body.selectedFindingId,
+                userId: user.id,
+                modelPreference,
+              }),
             }),
-          }),
-        );
+          );
+        } finally {
+          await quota.endRun(user.id).catch(() => undefined);
+        }
         audit.append({
           taskId: paramId(req),
           actor: user.login,
