@@ -283,7 +283,7 @@ export function App() {
   if (gate === "loading") {
     return (
       <div className="boot-screen utopia-cross-grid" role="status" aria-live="polite">
-        <BrandLockup size="lg" variant="minimal" subtitle="[ 35.6762°N // INITIALIZING_OPERATOR_SURFACE ]" />
+        <BrandLockup size="lg" variant="minimal" subtitle="[ 19.0760°N // 72.8777°E // INITIALIZING_OPERATOR_SURFACE ]" />
         {bootError ? <p className="landing-health-warn">{bootError}</p> : null}
       </div>
     );
@@ -318,9 +318,21 @@ export function App() {
   }
 
   if (gate === "onboarding") {
+    const hasInstalled = Boolean(
+      (me.user.installationIds && me.user.installationIds.length > 0) ||
+      (user?.installationIds && user.installationIds.length > 0)
+    );
     return (
       <Onboarding
         me={me}
+        initialStep={hasInstalled ? "pick" : "install"}
+        initialInstallationId={
+          me.user.installationIds?.[0]
+            ? String(me.user.installationIds[0])
+            : user?.installationIds?.[0]
+              ? String(user.installationIds[0])
+              : undefined
+        }
         onGrantReady={handleGrantReady}
         onSkipToDashboard={() => {
           setGate("dashboard");
@@ -337,7 +349,14 @@ export function App() {
       grant={grant}
       health={health}
       onGrantChange={setGrant}
-      onReonboard={() => {
+      onReonboard={async () => {
+        try {
+          const fresh = await api.me();
+          setMe(fresh);
+          setUser(fresh.user);
+        } catch {
+          /* ignore */
+        }
         setGate("onboarding");
         navigate("/onboarding", { replace: true });
       }}

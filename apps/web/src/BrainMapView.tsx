@@ -322,7 +322,7 @@ export function BrainMapView({
       <div className="topo-hud-telemetry">
         <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", flexWrap: "wrap" }}>
           <span style={{ color: "var(--signal-ember)", fontWeight: 700 }}>
-            ● [ Lat: 35.6762°N // Lon: 139.6503°E ]
+            ● [ Lat: 19.0760°N // Lon: 72.8777°E ]
           </span>
           <span style={{ color: "var(--paper-dim)" }}>
             Elev:{" "}
@@ -331,7 +331,7 @@ export function BrainMapView({
             </strong>
           </span>
           <span style={{ color: "var(--paper-muted)" }}>
-            Sector: <strong>TOKYO-ALPHA-01</strong>
+            Sector: <strong>AWS-AP-SOUTH-1</strong>
           </span>
         </div>
 

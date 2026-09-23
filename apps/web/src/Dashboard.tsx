@@ -186,7 +186,7 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
     <div className="app-shell utopia-cross-grid">
       <div className="utopia-telemetry-header">
         <div className="utopia-telemetry-coords">
-          [ 35.6762° N // 139.6503° E ]
+          [ 19.0760° N // 72.8777° E ]
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
           <span>TARGET: {grant?.repositoryFullName ?? "SAMPLE_FIXTURE"}</span>
@@ -308,14 +308,26 @@ export function Dashboard({ user, grant, health, onGrantChange, onReonboard, onL
           </div>
 
           <div className="actions">
-            <button
-              className="btn btn-primary"
-              type="button"
-              disabled={busy || !!grant}
-              onClick={authorizeFixture}
-            >
-              Authorize fixture
-            </button>
+            {grant ? (
+              <button
+                className="btn btn-ghost"
+                type="button"
+                disabled={busy}
+                onClick={onReonboard}
+                title="Switch repository or switch to sample fixture"
+              >
+                Switch repo / target
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary"
+                type="button"
+                disabled={busy || !!grant}
+                onClick={authorizeFixture}
+              >
+                Authorize fixture
+              </button>
+            )}
             <button className="btn" type="button" disabled={busy || !grant || !!task} onClick={start}>
               Start run
             </button>

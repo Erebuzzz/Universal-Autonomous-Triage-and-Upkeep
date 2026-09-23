@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Grant, InstallationRepo, MeResponse, UatuUser } from "./api";
 import { api, flags } from "./api";
 import { BrandLockup } from "./BrandLockup";
@@ -9,7 +9,7 @@ type Props = {
   onGrantReady: (grant: Grant) => void;
   onSkipToDashboard: () => void;
   onLogout: () => void;
-  /** Jump straight to K3 picker (e.g. after /onboarding/complete). */
+  /** Jump straight to K3 picker (e.g. after /onboarding/complete or change target). */
   initialStep?: "install" | "pick";
   initialInstallationId?: string;
 };
@@ -19,10 +19,15 @@ export function Onboarding({
   onGrantReady,
   onSkipToDashboard,
   onLogout,
-  initialStep = "install",
+  initialStep,
   initialInstallationId,
 }: Props) {
-  const [step, setStep] = useState<"install" | "pick">(initialStep);
+  const hasInstalled =
+    Boolean(initialInstallationId) ||
+    Boolean(me.user.installationIds && me.user.installationIds.length > 0);
+
+  const defaultStep: "install" | "pick" = initialStep ?? (hasInstalled ? "pick" : "install");
+  const [step, setStep] = useState<"install" | "pick">(defaultStep);
   const [installationId, setInstallationId] = useState(
     initialInstallationId ??
       (me.user.installationIds[0] ? String(me.user.installationIds[0]) : ""),
@@ -33,6 +38,14 @@ export function Onboarding({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UatuUser>(me.user);
+
+  useEffect(() => {
+    const id = Number(installationId) || me.user.installationIds[0];
+    if (id && Number.isFinite(id) && id > 0) {
+      setBusy(true);
+      void loadRepos(id).finally(() => setBusy(false));
+    }
+  }, [installationId]);
 
   const installUrl = githubAppInstallUrl(flags.githubAppSlug);
   const setupUrl = githubAppSetupUrl();
@@ -224,14 +237,25 @@ export function Onboarding({
                   Link &amp; continue
                 </button>
               </div>
-              <button
-                className="btn btn-ghost"
-                type="button"
-                disabled={busy}
-                onClick={() => setStep("pick")}
-              >
-                Skip install: use fixture
-              </button>
+              {hasInstalled ? (
+                <button
+                  className="btn btn-ghost"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setStep("pick")}
+                >
+                  ← Back to repository picker
+                </button>
+              ) : (
+                <button
+                  className="btn btn-ghost"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setStep("pick")}
+                >
+                  Skip install: use fixture
+                </button>
+              )}
             </div>
           </section>
         ) : (
@@ -262,10 +286,32 @@ export function Onboarding({
               <div className="target-option target-repos">
                 <span className="target-kicker">GitHub · sandbox clone</span>
                 <span className="target-name">Linked repositories</span>
+                {user.installationIds.length > 1 ? (
+                  <div style={{ marginTop: "0.5rem", marginBottom: "0.5rem" }}>
+                    <label style={{ fontSize: "0.75rem", color: "var(--paper-dim)", display: "block", marginBottom: "0.25rem" }}>
+                      GitHub Installation Account:
+                    </label>
+                    <select
+                      className="input"
+                      style={{ padding: "0.35rem 0.6rem", fontSize: "0.8rem", width: "100%" }}
+                      value={installationId}
+                      onChange={(e) => {
+                        setInstallationId(e.target.value);
+                        setSelectedRepo("");
+                      }}
+                    >
+                      {user.installationIds.map((id) => (
+                        <option key={id} value={String(id)}>
+                          Installation #{id}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
                 {reposNote ? <p className="target-note">{reposNote}</p> : null}
                 {!repos.length ? (
                   <p className="empty" style={{ marginTop: "0.75rem" }}>
-                    Link an installation (step 01) or use the sample fixture.
+                    {busy ? "Loading repositories from GitHub..." : "No repositories returned. Link an installation or use fixture."}
                   </p>
                 ) : (
                   <ul className="repo-list">
@@ -297,6 +343,27 @@ export function Onboarding({
                   Authorize selected repo
                 </button>
               </div>
+            </div>
+
+            <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ fontSize: "0.8rem" }}
+                onClick={() => setStep("install")}
+              >
+                + Link or install on another organization
+              </button>
+              {onSkipToDashboard ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ fontSize: "0.8rem" }}
+                  onClick={onSkipToDashboard}
+                >
+                  Return to Dashboard →
+                </button>
+              ) : null}
             </div>
           </section>
         )}

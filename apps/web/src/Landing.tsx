@@ -64,7 +64,7 @@ export function Landing({
       {/* Topmost Utopia Tokyo GPS Telemetry Strip */}
       <div className="utopia-telemetry-header">
         <div className="utopia-telemetry-coords">
-          [ 35.6762° N // 139.6503° E ]
+          [ 19.0760° N // 72.8777° E ]
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
           <span>Sector: Global Observation</span>

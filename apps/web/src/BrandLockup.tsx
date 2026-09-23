@@ -95,7 +95,7 @@ export function BrandLockup({
               ? subtitle
               : variant === "tagline"
                 ? "[ OBSERVED · TRIAGED · REPAIRED ]"
-                : "[ 35.6762°N // AUTONOMOUS_UPKEEP ]"}
+                : "[ 19.0760°N // 72.8777°E // AUTONOMOUS_UPKEEP ]"}
           </div>
         )}
       </div>

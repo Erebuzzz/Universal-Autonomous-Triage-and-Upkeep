@@ -52,7 +52,7 @@ export function BrainMapPreview() {
   return (
     <div className="app-shell utopia-cross-grid" style={{ padding: "1.5rem", maxWidth: 1100, margin: "0 auto" }}>
       <header style={{ marginBottom: "1rem" }}>
-        <BrandLockup size="md" subtitle="[ 35.6762°N // TOPOGRAPHIC_CARTOGRAPHY ]" href="/" />
+        <BrandLockup size="md" subtitle="[ 19.0760°N // 72.8777°E // TOPOGRAPHIC_CARTOGRAPHY ]" href="/" />
       </header>
       <BrainMapView brain={brain} height={640} />
     </div>

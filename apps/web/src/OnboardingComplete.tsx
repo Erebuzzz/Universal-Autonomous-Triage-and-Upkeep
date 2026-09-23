@@ -189,7 +189,7 @@ export function OnboardingComplete({
   if (authLoading) {
     return (
       <div className="boot-screen" role="status" aria-live="polite">
-        <BrandLockup size="lg" variant="minimal" subtitle="[ 35.6762°N // CONFIRMING_INSTALL ]" />
+        <BrandLockup size="lg" variant="minimal" subtitle="[ 19.0760°N // 72.8777°E // CONFIRMING_INSTALL ]" />
       </div>
     );
   }
