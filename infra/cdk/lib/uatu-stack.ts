@@ -74,6 +74,14 @@ export class UatuShipItStack extends cdk.Stack {
     });
 
     const webOrigin = process.env.UATU_WEB_ORIGIN?.trim() || "https://uatu-beta.vercel.app";
+    const allowedOrigins = [
+      webOrigin,
+      "https://uatu-beta.vercel.app",
+      "https://uatu-qrmdac7aa-unstable-kernel.vercel.app",
+      "http://localhost:5173",
+      ...(process.env.UATU_CORS_ORIGIN ? process.env.UATU_CORS_ORIGIN.split(",").map((s) => s.trim()) : []),
+    ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i);
+
     const sharedEnv: Record<string, string> = {
       TASKS_TABLE: tasksTable.tableName,
       ARTIFACT_BUCKET: artifactBucket.bucketName,
@@ -84,7 +92,7 @@ export class UatuShipItStack extends cdk.Stack {
       UATU_DATA_DIR: "/tmp/uatu-data",
       // Default fail-closed for deployed stacks; override explicitly for break-glass demos.
       UATU_AUTH_REQUIRED: process.env.UATU_AUTH_REQUIRED ?? "true",
-      UATU_CORS_ORIGIN: webOrigin,
+      UATU_CORS_ORIGIN: allowedOrigins.join(","),
       UATU_CORS_CREDENTIALS: "true",
       UATU_WEB_ORIGIN: webOrigin,
       UATU_COOKIE_SECURE: "true",
@@ -218,13 +226,6 @@ export class UatuShipItStack extends cdk.Stack {
         }),
       ],
     });
-
-    const allowedOrigins = [
-      webOrigin,
-      "https://uatu-beta.vercel.app",
-      "https://uatu-qrmdac7aa-unstable-kernel.vercel.app",
-      "http://localhost:5173",
-    ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i);
 
     const httpApi = new apigwv2.HttpApi(this, "HttpApi", {
       apiName: "uatu-api",

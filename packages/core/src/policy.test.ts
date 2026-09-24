@@ -66,6 +66,25 @@ describe("AuthorizationPolicy", () => {
     assert.throws(() => p.assertTargetIsFixture(extra), PolicyDeniedError);
   });
 
+  it("trusts persistent grant targetPath without in-memory temporary root", () => {
+    const sandboxPath = path.join(os.tmpdir(), "uatu-persistent-grant-sandbox");
+    const freshPolicy = new AuthorizationPolicy(fixture);
+    const externalGrant = grant({ targetPath: sandboxPath });
+
+    freshPolicy.assertCapability(
+      { mode: "REMEDIATE", grant: externalGrant, fixtureRoot: fixture },
+      "write_files",
+    );
+
+    freshPolicy.assertPathAllowed(externalGrant, "src/index.js");
+    freshPolicy.assertTargetIsFixture(sandboxPath, externalGrant);
+
+    assert.throws(
+      () => freshPolicy.assertTargetIsFixture(sandboxPath),
+      PolicyDeniedError,
+    );
+  });
+
   it("requires security-research scope for SECURITY path", () => {
     assert.throws(
       () => policy.assertSecurityResearchAllowed(grant({ scope: "general" })),

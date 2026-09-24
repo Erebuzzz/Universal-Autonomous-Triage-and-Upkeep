@@ -19,6 +19,7 @@ fixtures/demo-vulnerable/.uatu-work/
 .turbo/
 
 # Ephemeral agent / workflow handoffs (never commit)
+brain/
 WORKFLOW_CONTEXT*.md
 **/WORKFLOW_CONTEXT*.md
 *agent*handoff*

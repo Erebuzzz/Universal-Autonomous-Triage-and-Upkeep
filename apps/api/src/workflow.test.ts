@@ -14,6 +14,8 @@ describe("workflow integration", () => {
   let tmp: string;
   let fixture: string;
   let orchestrator: WorkflowOrchestrator;
+  let store: JsonFileStore;
+  let audit: AuditTrail;
 
   before(async () => {
     tmp = await mkdtemp(path.join(os.tmpdir(), "uatu-"));
@@ -53,8 +55,8 @@ describe("workflow integration", () => {
     git(["add", "."]);
     git(["commit", "-m", "seed"]);
 
-    const store = new JsonFileStore(path.join(tmp, "data"));
-    const audit = new AuditTrail();
+    store = new JsonFileStore(path.join(tmp, "data"));
+    audit = new AuditTrail();
     const policy = new AuthorizationPolicy(fixture);
     orchestrator = new WorkflowOrchestrator({ policy, store, audit, fixturePath: fixture });
   });
@@ -98,5 +100,36 @@ describe("workflow integration", () => {
     task = await orchestrator.advance(task.id);
     assert.equal(task.state, "TRIAGED");
     assert.ok(task.findings.length > 0);
+  });
+
+  it("fails loud and transitions to BLOCKED without copying fixture when GitHub clone fails", async () => {
+    const sandboxDir = path.join(tmp, "failing-github-clone");
+    const grant = await orchestrator.createGrant({
+      grantedBy: "test",
+      targetPath: sandboxDir,
+      source: "github",
+      repositoryFullName: "acme/unreachable-repo",
+      installationId: 99999,
+    });
+    const task = await orchestrator.startRun(grant.id);
+    assert.equal(task.state, "DISCOVERED");
+
+    await assert.rejects(
+      async () => orchestrator.advance(task.id),
+      /Failed to clone|No GitHub token/i,
+    );
+
+    const updatedTask = await store.getTask(task.id);
+    assert.equal(updatedTask?.state, "BLOCKED");
+
+    const { existsSync } = await import("node:fs");
+    assert.equal(existsSync(path.join(sandboxDir, "src", "range.js")), false);
+
+    const events = audit.forTask(task.id);
+    assert.ok(
+      events.some(
+        (e) => e.action === "repo_clone_failed" || e.action === "github_token_mint_failed",
+      ),
+    );
   });
 });

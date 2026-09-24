@@ -35,7 +35,7 @@ export async function runCommand(
   const full = [command, ...args].join(" ");
   if (options.grant) {
     options.policy.assertCommandAllowed(options.grant, full);
-    options.policy.assertTargetIsFixture(options.cwd);
+    options.policy.assertTargetIsFixture(options.cwd, options.grant);
   } else if (!options.dryRun) {
     throw new PolicyDeniedError("Command execution requires a grant or dryRun");
   }

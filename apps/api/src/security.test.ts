@@ -221,3 +221,56 @@ describe("clone error redaction", () => {
     assert.match(message, /REDACTED/i);
   });
 });
+
+describe("CORS origin filtering", () => {
+  it("allows configured whitelist origins with credentials", async () => {
+    const orig = process.env.UATU_CORS_ORIGIN;
+    try {
+      process.env.UATU_CORS_ORIGIN = "https://uatu-beta.vercel.app, http://localhost:5173";
+      const app = createHttpApp(mockCtx(mockAuthStores()));
+      const server = createServer(app);
+      await new Promise<void>((resolve) => server.listen(0, resolve));
+      const port = (server.address() as AddressInfo).port;
+
+      const res = await fetch(`http://localhost:${port}/health`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: "https://uatu-beta.vercel.app",
+          "Access-Control-Request-Method": "GET",
+        },
+      });
+
+      assert.equal(res.headers.get("access-control-allow-origin"), "https://uatu-beta.vercel.app");
+      assert.equal(res.headers.get("access-control-allow-credentials"), "true");
+      server.close();
+    } finally {
+      if (orig !== undefined) process.env.UATU_CORS_ORIGIN = orig;
+      else delete process.env.UATU_CORS_ORIGIN;
+    }
+  });
+
+  it("denies origins not in the whitelist", async () => {
+    const orig = process.env.UATU_CORS_ORIGIN;
+    try {
+      process.env.UATU_CORS_ORIGIN = "https://uatu-beta.vercel.app";
+      const app = createHttpApp(mockCtx(mockAuthStores()));
+      const server = createServer(app);
+      await new Promise<void>((resolve) => server.listen(0, resolve));
+      const port = (server.address() as AddressInfo).port;
+
+      const res = await fetch(`http://localhost:${port}/health`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: "https://malicious-site.example.com",
+          "Access-Control-Request-Method": "GET",
+        },
+      });
+
+      assert.equal(res.headers.get("access-control-allow-origin"), null);
+      server.close();
+    } finally {
+      if (orig !== undefined) process.env.UATU_CORS_ORIGIN = orig;
+      else delete process.env.UATU_CORS_ORIGIN;
+    }
+  });
+});

@@ -131,6 +131,19 @@ export function BrainMapView({
     return map;
   }, [coordinates]);
 
+  const filteredCoordinates = useMemo(() => {
+    if (filterTier === "ALL") return coordinates;
+    return coordinates.filter((c) => c.tier === filterTier);
+  }, [coordinates, filterTier]);
+
+  const filteredCoordMap = useMemo(() => {
+    const map = new Map<string, MapCoordinate>();
+    for (const c of filteredCoordinates) {
+      map.set(c.id, c);
+    }
+    return map;
+  }, [filteredCoordinates]);
+
   // Selected coordinate
   const selectedCoord = useMemo(() => {
     return selectedId ? coordMap.get(selectedId) ?? null : null;
@@ -198,8 +211,8 @@ export function BrainMapView({
 
   // Edges filtered
   const visibleEdges = useMemo(() => {
-    return brain.edges.filter((e) => coordMap.has(e.from) && coordMap.has(e.to));
-  }, [brain.edges, coordMap]);
+    return brain.edges.filter((e) => filteredCoordMap.has(e.from) && filteredCoordMap.has(e.to));
+  }, [brain.edges, filteredCoordMap]);
 
   // Pan Handlers
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -303,11 +316,6 @@ export function BrainMapView({
       handleNodeClick(summit, { stopPropagation: () => {} } as React.MouseEvent);
     }
   };
-
-  const filteredCoordinates = useMemo(() => {
-    if (filterTier === "ALL") return coordinates;
-    return coordinates.filter((c) => c.tier === filterTier);
-  }, [coordinates, filterTier]);
 
   return (
     <div
@@ -470,8 +478,8 @@ export function BrainMapView({
         {/* Synaptic Edge Pathways */}
         <g className="topo-edges">
           {visibleEdges.map((edge) => {
-            const from = coordMap.get(edge.from);
-            const to = coordMap.get(edge.to);
+            const from = filteredCoordMap.get(edge.from);
+            const to = filteredCoordMap.get(edge.to);
             if (!from || !to) return null;
 
             const isEdgeSelected = selectedId === from.id || selectedId === to.id;

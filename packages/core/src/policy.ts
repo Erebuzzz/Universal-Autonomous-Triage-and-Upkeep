@@ -80,7 +80,7 @@ export class AuthorizationPolicy {
       if (!ctx.grant.capabilities.includes(capability)) {
         throw new PolicyDeniedError(`Grant does not include capability ${capability}`);
       }
-      this.assertTargetIsFixture(ctx.grant.targetPath);
+      this.assertTargetIsFixture(ctx.grant.targetPath, ctx.grant);
     }
   }
 
@@ -92,10 +92,14 @@ export class AuthorizationPolicy {
     );
   }
 
-  assertTargetIsFixture(targetPath: string): void {
+  assertTargetIsFixture(targetPath: string, grant?: AuthorizationGrant): void {
     const target = normalize(targetPath);
     const root = normalize(this.fixtureRoot);
     if (target === root || target.startsWith(root + "/")) return;
+    if (grant?.targetPath) {
+      const grantTarget = normalize(grant.targetPath);
+      if (target === grantTarget || target.startsWith(grantTarget + "/")) return;
+    }
     for (const extra of this.additionalRoots) {
       if (target === extra || target.startsWith(extra + "/")) return;
     }
@@ -105,7 +109,7 @@ export class AuthorizationPolicy {
   }
 
   assertPathAllowed(grant: AuthorizationGrant, filePath: string): void {
-    this.assertTargetIsFixture(grant.targetPath);
+    this.assertTargetIsFixture(grant.targetPath, grant);
     const abs = normalize(path.isAbsolute(filePath) ? filePath : path.join(grant.targetPath, filePath));
     const root = normalize(grant.targetPath);
     if (abs !== root && !abs.startsWith(root + "/")) {

@@ -15,7 +15,7 @@ import {
   type TaskState,
   type VerificationResult,
 } from "@uatu/domain";
-import { AuditTrail, transitionAudit } from "./audit.js";
+import { AuditTrail, redactSecrets, transitionAudit } from "./audit.js";
 import { RepositoryBrain, makeNeuron } from "./brain.js";
 import { runCommand } from "./command-runner.js";
 import {
@@ -112,45 +112,118 @@ export class WorkflowOrchestrator {
     const installationId = task.installationId ?? grant?.installationId;
     const isGithub = task.source === "github" || grant?.source === "github" || Boolean(fullName);
 
-    if (isGithub && fullName) {
-      const ref = parseGitHubRepo(fullName);
-      if (ref) {
-        await mkdir(path.dirname(target), { recursive: true });
-        const token = await resolveGitHubToken({ installationId });
-        const remote = await remoteHttpsUrlForRepo(ref);
-        const authArgs = token ? gitAuthExtraHeaderArgs(token) : [];
-        const result = spawnSync(
-          "git",
-          [
-            ...authArgs,
-            "clone",
-            "--depth",
-            "1",
-            "--single-branch",
-            remote,
-            target,
-          ],
-          {
-            encoding: "utf8",
-            timeout: 180_000,
-            env: {
-              ...process.env,
-              GIT_CEILING_DIRECTORIES: path.dirname(target),
-              GIT_TERMINAL_PROMPT: "0",
-            },
-          },
-        );
-        if (result.status === 0) {
-          this.deps.policy.grantTemporaryRoot(target);
-          if (task.patch?.branchName) {
-            spawnSync("git", ["checkout", "-B", task.patch.branchName], {
-              cwd: target,
-              encoding: "utf8",
-            });
-          }
-          return;
-        }
+    if (isGithub) {
+      if (!fullName) {
+        const errorMsg = "GitHub task missing repository full name";
+        this.deps.audit.append({
+          taskId: task.id,
+          actor: "system",
+          action: "repo_clone_failed",
+          detail: errorMsg,
+          metadata: { installationId },
+        });
+        await this.persistAudit();
+        throw new Error(errorMsg);
       }
+
+      const ref = parseGitHubRepo(fullName);
+      if (!ref) {
+        const errorMsg = `Invalid GitHub repository format: ${fullName}`;
+        this.deps.audit.append({
+          taskId: task.id,
+          actor: "system",
+          action: "repo_clone_failed",
+          detail: errorMsg,
+          metadata: { installationId, repositoryFullName: fullName },
+        });
+        await this.persistAudit();
+        throw new Error(errorMsg);
+      }
+
+      await mkdir(path.dirname(target), { recursive: true });
+
+      let token: string | undefined;
+      try {
+        token = await resolveGitHubToken({ installationId });
+      } catch (err) {
+        const detail = redactSecrets(err instanceof Error ? err.message : String(err)).text;
+        this.deps.audit.append({
+          taskId: task.id,
+          actor: "system",
+          action: "github_token_mint_failed",
+          detail: `Failed resolving GitHub token for ${fullName}: ${detail}`,
+          metadata: { installationId, repositoryFullName: fullName },
+        });
+        await this.persistAudit();
+        throw new Error(`Failed resolving GitHub token for ${fullName}: ${detail}`);
+      }
+
+      if (!token) {
+        const detail = "No GitHub token or GitHub App credentials available for clone";
+        this.deps.audit.append({
+          taskId: task.id,
+          actor: "system",
+          action: "github_token_mint_failed",
+          detail: `${detail} (${fullName})`,
+          metadata: { installationId, repositoryFullName: fullName },
+        });
+        await this.persistAudit();
+        throw new Error(`Failed to clone ${fullName}: ${detail}`);
+      }
+
+      const remote = await remoteHttpsUrlForRepo(ref);
+      const authArgs = gitAuthExtraHeaderArgs(token);
+      const result = spawnSync(
+        "git",
+        [
+          ...authArgs,
+          "clone",
+          "--depth",
+          "1",
+          "--single-branch",
+          remote,
+          target,
+        ],
+        {
+          encoding: "utf8",
+          timeout: 180_000,
+          env: {
+            ...process.env,
+            GIT_CEILING_DIRECTORIES: path.dirname(target),
+            GIT_TERMINAL_PROMPT: "0",
+          },
+        },
+      );
+
+      if (result.status === 0) {
+        this.deps.policy.grantTemporaryRoot(target);
+        if (task.patch?.branchName) {
+          spawnSync("git", ["checkout", "-B", task.patch.branchName], {
+            cwd: target,
+            encoding: "utf8",
+          });
+        }
+        return;
+      }
+
+      const cloneError = redactSecrets(
+        result.error?.message || result.stderr || result.stdout || `git clone exited with code ${result.status}`
+      ).text.trim();
+
+      this.deps.audit.append({
+        taskId: task.id,
+        actor: "system",
+        action: "repo_clone_failed",
+        detail: `Failed to clone ${fullName}: ${cloneError}`,
+        metadata: {
+          installationId,
+          repositoryFullName: fullName,
+          exitCode: result.status,
+          error: result.error?.message,
+        },
+      });
+      await this.persistAudit();
+      throw new Error(`Failed to clone repository ${fullName}: ${cloneError}`);
     }
 
     if (this.deps.fixturePath && target !== this.deps.fixturePath) {
@@ -236,7 +309,7 @@ export class WorkflowOrchestrator {
         (input.repositoryFullName ? input.repositoryFullName.split("/")[0] : undefined) ??
         input.userId,
     };
-    this.deps.policy.assertTargetIsFixture(grant.targetPath);
+    this.deps.policy.assertTargetIsFixture(grant.targetPath, grant);
     await this.deps.store.saveGrant(grant);
     this.deps.audit.append({
       taskId: "system",
@@ -310,7 +383,15 @@ export class WorkflowOrchestrator {
       await this.deps.store.saveTask(task);
     }
     const grant = task.grantId ? await this.deps.store.getGrant(task.grantId) : undefined;
-    await this.ensureRepositoryReady(task, grant);
+    try {
+      await this.ensureRepositoryReady(task, grant);
+    } catch (err) {
+      if (canTransition(task.state, "BLOCKED")) {
+        const message = err instanceof Error ? err.message : String(err);
+        await this.transition(task, "BLOCKED", "supervisor", message);
+      }
+      throw err;
+    }
 
     switch (task.state) {
       case "DISCOVERED":

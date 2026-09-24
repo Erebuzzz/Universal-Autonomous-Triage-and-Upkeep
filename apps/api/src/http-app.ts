@@ -117,16 +117,33 @@ function canAccessTenantRecord(
 }
 
 export function createHttpApp(ctx: AppContext): express.Express {
-  const corsOrigin =
-    process.env.UATU_CORS_ORIGIN ??
-    (process.env.AWS_LAMBDA_FUNCTION_NAME ? "*" : "http://localhost:5173");
+  const rawCorsOrigin =
+    process.env.UATU_CORS_ORIGIN?.trim() ||
+    (!process.env.AWS_LAMBDA_FUNCTION_NAME ? "http://localhost:5173" : "");
+  const allowedOrigins = rawCorsOrigin
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const credentials =
+    process.env.UATU_CORS_CREDENTIALS === "true" ||
+    (allowedOrigins.length > 0 && !allowedOrigins.includes("*"));
+
   const { store, audit, orchestrator, fixturePath, dataDir, jobQueueUrl, asyncJobs, authStores, quota } =
     ctx;
   const app = express();
-  const credentials = process.env.UATU_CORS_CREDENTIALS === "true" || corsOrigin !== "*";
   app.use(
     cors({
-      origin: corsOrigin === "*" ? true : corsOrigin,
+      origin: (origin, callback) => {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+        if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+        callback(null, false);
+      },
       credentials,
     }),
   );
